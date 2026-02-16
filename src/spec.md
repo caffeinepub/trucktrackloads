@@ -1,13 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add an Admin entry to site navigation, enable working admin login, and ensure admin dashboard actions operate on the correct backend records.
+**Goal:** Fix the admin login verification crash on `/admin/login` and ensure navigation to `/admin` only happens after a successful, deterministic admin verification result.
 
 **Planned changes:**
-- Add an “Admin” link/button to both desktop navigation and the mobile menu that routes to `/admin/login`.
-- Ensure the `/admin/login` form authenticates via the existing backend admin login flow using username `Gushna` and password `Gushgesh#9`, stores the returned admin token in session storage using the existing mechanism, verifies admin status, then navigates to `/admin` on success.
-- Keep `/admin` access-controlled: redirect unauthenticated/failed-verification users to `/admin/login`, and support sign-out that clears the admin session and returns to `/admin/login`.
-- Fix admin dashboard actions so approve/reject/verify buttons target the correct underlying records (no placeholder/index IDs or incorrect identifiers).
-- Extend backend admin queries to return required identifiers (loadId for loads, Principal for clients/transporters) and update frontend React Query hooks/UI to consume them, with proper query invalidation/refetch after mutations.
+- Update the post-login admin verification step to use a React Query flow that returns a clear boolean outcome (no indexing into undefined/void values).
+- Ensure successful verification navigates to `/admin`, and unsuccessful/errored verification keeps the user on `/admin/login` with an English error message.
+- Update the "Retry Verification" action to use the same corrected verification mechanism and recover without a full page refresh.
+- Add defensive checks and diagnostic logging so missing prerequisites (e.g., token/actor/query result unavailable) show a clear English error and never crash the page.
 
-**User-visible outcome:** Users can access an Admin login from the main menu, sign in successfully to reach `/admin`, and use the admin dashboard tabs to approve/reject loads and verify/reject clients and transporters with actions applying to the correct records and updating the UI accordingly.
+**User-visible outcome:** Admins can log in without seeing the “Cannot read properties of undefined (reading '0')” error; verification either completes and opens `/admin`, or shows a clear English failure message with a working “Retry Verification” option.

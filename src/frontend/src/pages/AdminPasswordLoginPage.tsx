@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { setAdminToken } from '@/utils/urlParams';
+import { setAdminToken, getAdminToken } from '@/utils/urlParams';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { verifyAdminAccess } from '@/hooks/useAdminVerification';
 
 type DiagnosticStage = 'credential-validation' | 'token-storage' | 'actor-recreation' | 'admin-verification' | 'navigation';
 
@@ -38,38 +39,53 @@ export default function AdminPasswordLoginPage() {
   const handleRetryVerification = async () => {
     setVerificationError(null);
     setIsLoading(true);
-    setDiagnostics([]);
     
     try {
-      addDiagnostic('actor-recreation', true, 'Invalidating actor to force recreation with stored token...');
+      addDiagnostic('actor-recreation', true, 'Checking prerequisites for verification...');
       
-      // Invalidate actor first to ensure it's recreated with the token
+      // Check prerequisites
+      const storedToken = getAdminToken();
+      if (!storedToken) {
+        addDiagnostic('actor-recreation', false, 'Admin token missing from session');
+        setVerificationError('Admin token not found. Please log in again.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!actor) {
+        addDiagnostic('actor-recreation', false, 'Actor not available');
+        setVerificationError('System not ready. Please refresh the page and try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      addDiagnostic('actor-recreation', true, 'Prerequisites verified, invalidating actor...');
+      
+      // Invalidate actor to force recreation with token
       await queryClient.invalidateQueries({ queryKey: ['actor'] });
       
-      // Wait for actor to be ready
-      await queryClient.refetchQueries({ queryKey: ['actor'] });
+      // Wait a moment for actor to be recreated
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      addDiagnostic('actor-recreation', true, 'Actor recreated successfully');
-      addDiagnostic('admin-verification', true, 'Attempting admin verification...');
+      addDiagnostic('actor-recreation', true, 'Actor invalidated, attempting verification...');
+      addDiagnostic('admin-verification', true, 'Calling backend for admin verification...');
       
-      // Now invalidate and refetch admin verification - this returns the query results
-      await queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-      const results = await queryClient.refetchQueries({ queryKey: ['isCallerAdmin'] });
+      // Use deterministic verification helper
+      const isVerified = await verifyAdminAccess(actor, storedToken, queryClient);
       
-      // Check the actual refetch result
-      const verificationResult = results[0];
-      if (verificationResult?.state?.data === true) {
+      if (isVerified) {
         addDiagnostic('admin-verification', true, 'Admin verification succeeded');
         addDiagnostic('navigation', true, 'Navigating to admin dashboard...');
         navigate({ to: '/admin', replace: true });
       } else {
-        addDiagnostic('admin-verification', false, 'Admin verification returned false or undefined');
+        addDiagnostic('admin-verification', false, 'Admin verification returned false');
         setVerificationError('Admin verification failed. The backend did not confirm admin access. Please try logging in again or contact support.');
       }
     } catch (err: any) {
       console.error('Verification retry error:', err);
-      addDiagnostic('admin-verification', false, `Verification error: ${err.message || 'Unknown error'}`);
-      setVerificationError(err.message || 'Failed to verify admin access. Please try again.');
+      const errorMsg = err.message || 'Unknown error';
+      addDiagnostic('admin-verification', false, `Verification error: ${errorMsg}`);
+      setVerificationError(`Failed to verify admin access: ${errorMsg}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +100,7 @@ export default function AdminPasswordLoginPage() {
 
     try {
       if (!actor) {
+        addDiagnostic('credential-validation', false, 'Actor not available');
         throw new Error('System not ready. Please refresh the page and try again.');
       }
 
@@ -93,6 +110,7 @@ export default function AdminPasswordLoginPage() {
 
       // Validate inputs
       if (!trimmedUsername || !trimmedPassword) {
+        addDiagnostic('credential-validation', false, 'Empty credentials provided');
         throw new Error('Username and password cannot be empty or contain only whitespace');
       }
 
@@ -118,34 +136,23 @@ export default function AdminPasswordLoginPage() {
       // Step 3: Invalidate actor to force recreation with new token
       await queryClient.invalidateQueries({ queryKey: ['actor'] });
       
-      // Step 4: Wait for actor to be recreated
-      await queryClient.refetchQueries({ queryKey: ['actor'] });
+      // Wait a moment for actor to be recreated
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       addDiagnostic('actor-recreation', true, 'Actor recreated successfully');
       addDiagnostic('admin-verification', true, 'Attempting admin verification...');
 
-      // Step 5: Invalidate and refetch admin verification with the new actor
-      await queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-      const results = await queryClient.refetchQueries({ queryKey: ['isCallerAdmin'] });
+      // Step 4: Use deterministic verification helper
+      const isVerified = await verifyAdminAccess(actor, token, queryClient);
 
-      // Step 6: Check the actual refetch result (not cached data)
-      const verificationResult = results[0];
-      
-      if (verificationResult?.state?.data === true) {
+      if (isVerified) {
         // Success - navigate to admin dashboard
         addDiagnostic('admin-verification', true, 'Admin verification succeeded');
         addDiagnostic('navigation', true, 'Navigating to admin dashboard...');
         navigate({ to: '/admin', replace: true });
-      } else if (verificationResult?.state?.error) {
-        // Verification query errored
-        const errorMsg = verificationResult.state.error instanceof Error 
-          ? verificationResult.state.error.message 
-          : 'Verification failed';
-        addDiagnostic('admin-verification', false, `Verification error: ${errorMsg}`);
-        setVerificationError(`Login succeeded but verification failed: ${errorMsg}. Please retry.`);
       } else {
-        // Verification returned false or undefined
-        addDiagnostic('admin-verification', false, 'Verification returned false or undefined');
+        // Verification returned false
+        addDiagnostic('admin-verification', false, 'Verification returned false');
         setVerificationError('Login succeeded but admin verification returned false. Please retry verification or contact support.');
       }
     } catch (err: any) {
@@ -163,6 +170,10 @@ export default function AdminPasswordLoginPage() {
           errorMessage = 'System is initializing. Please wait a moment and try again.';
         } else if (err.message.includes('empty') || err.message.includes('whitespace')) {
           errorMessage = err.message;
+        } else if (err.message.includes('Actor not available')) {
+          errorMessage = 'System not ready. Please refresh the page and try again.';
+        } else if (err.message.includes('token not found')) {
+          errorMessage = 'Session error. Please try logging in again.';
         } else {
           errorMessage = err.message;
         }

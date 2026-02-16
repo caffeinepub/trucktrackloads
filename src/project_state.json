@@ -1,75 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App needs an Admin menu entry with credential-based login and a functioning admin dashboard; also address unresponsive click interactions.",
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Some clicks/interactions are not responding or not showing what is being clicked."
+    "Admin login attempt not working as expected (user reports issue when trying to log in)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-an-admin-button-link-to-the-main-navigation-menu-desktop-and-mobile-that-routes-to-the-admin-login-page-at-admin-login",
-      "title": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
+      "id": "feature-fix-the-admin-password-login-flow-at-admin-login-so-it-no-longer-throws-a-runtime-error-cannot-read-properties-of-undefined-reading-0-during-the-post-login-admin-verification-step-and-reliably-navigates-to-admin-only-after-a-successful-admin-verification-result",
+      "title": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-admin-login-form-at-admin-login-successfully-authenticates-using-username-gushna-and-password-gushgesh-9-by-calling-the-backend-admin-login-flow-storing-the-returned-token-and-then-navigating-to-admin-on-successful-admin-verification",
-      "title": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
+      "id": "feature-update-the-retry-verification-flow-on-the-admin-login-page-to-use-the-same-corrected-verification-mechanism-as-the-main-login-flow-preventing-the-same-runtime-crash-and-ensuring-it-can-recover-without-a-full-page-refresh",
+      "title": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-the-admin-dashboard-so-that-all-click-actions-in-each-dashboard-section-operate-on-the-correct-underlying-records-no-placeholder-ids-or-incorrect-identifiers-including-approving-rejecting-loads-verifying-clients-and-verifying-transporters",
-      "title": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
+      "id": "feature-add-defensive-diagnostics-on-the-admin-login-page-so-that-if-admin-verification-cannot-be-determined-e-g-missing-token-actor-not-ready-or-query-result-unavailable-the-ui-shows-a-clear-english-error-and-the-diagnostic-log-records-the-exact-stage-that-failed-without-crashing",
+      "title": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-extend-the-backend-admin-facing-query-api-to-return-the-identifiers-required-for-correct-admin-actions-load-ids-and-user-principals-and-update-the-frontend-react-query-hooks-and-admin-dashboard-ui-to-consume-these-identifier-inclusive-results",
-      "title": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-admin-dashboard-route-admin-remains-access-controlled-unauthenticated-users-no-valid-admin-token-failed-verification-must-be-redirected-to-admin-login-while-verified-admins-can-view-and-use-the-dashboard-tabs",
-      "title": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Add an Admin button to the main menu that opens an admin login form.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Implement admin login flow that accepts username 'Gushna' and password 'Gushgesh#9' and, on success, routes to a functioning admin dashboard for managing the app.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Fix UI click interactions so clicks respond and display/open the correct item/section being clicked (especially in admin dashboard).",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
-  "projectName": "TruckTrack Admin",
+  "new_feature_requests": [],
+  "projectName": "TruckTrack Africa",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

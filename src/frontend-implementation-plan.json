@@ -1,109 +1,57 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "TruckTrack Admin: Admin nav link, password admin login flow, and correct dashboard record actions",
+  "title": "TruckTrack Africa — Fix admin login verification crash",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add an Admin entry to desktop and mobile navigation that routes to /admin/login.",
+      "summary": "Replace the admin verification logic on /admin/login with a deterministic boolean React Query-based check that never indexes into undefined refetch results, and only navigates to /admin after verified admin access.",
       "acceptanceCriteria": [
-        "Top navigation shows an \"Admin\" entry on desktop navigation.",
-        "Mobile menu shows an \"Admin\" entry when expanded.",
-        "Clicking \"Admin\" navigates to \"/admin/login\"."
+        "After submitting correct admin credentials, the login page does not show the error \"Cannot read properties of undefined (reading '0')\".",
+        "The admin verification step uses a React Query API that returns a deterministic boolean result (not relying on indexing into an undefined/void refetch return value).",
+        "If verification returns true, the app navigates to \"/admin\" and the admin dashboard renders.",
+        "If verification fails (false) or errors, the user remains on \"/admin/login\" and sees an English error message explaining verification failed, with a working \"Retry Verification\" action."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/layout/TopNav.tsx",
+          "path": "frontend/src/hooks/useAdminVerification.ts",
+          "operation": "create",
+          "description": "Create a small helper hook/util that performs admin verification as a deterministic boolean using the existing backend admin-check capability (e.g., initialize with the stored secret token then call the admin check), designed to be used from the admin login page without relying on refetchQueries return values. Use the authorization component’s intended admin-verification approach; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
           "operation": "modify",
-          "description": "Add an \"Admin\" navigation item to both the desktop nav and the mobile expanded menu, routing to \"/admin/login\". Ensure mobile click also closes the mobile menu."
+          "description": "Update the post-login verification step to call the new deterministic admin verification helper (instead of using queryClient.refetchQueries() and indexing into its return). Ensure navigation to \"/admin\" happens only after a true verification result; otherwise keep the user on \"/admin/login\" and show an English verification-failed message. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Ensure /admin/login performs backend admin login, stores token in sessionStorage via existing mechanism, verifies admin, and navigates to /admin; show errors on invalid credentials.",
+      "summary": "Make the \"Retry Verification\" action on /admin/login reuse the corrected deterministic verification mechanism and recover without refreshing.",
       "acceptanceCriteria": [
-        "Submitting username \"Gushna\" and password \"Gushgesh#9\" results in a successful login token being stored in session storage (using the app's existing admin-token mechanism).",
-        "After login, admin verification succeeds and the user is navigated to \"/admin\".",
-        "Submitting invalid credentials shows an error message and does not navigate to \"/admin\"."
+        "Tapping \"Retry Verification\" does not throw any runtime error and updates the diagnostic log with the retry attempt.",
+        "If admin verification succeeds after retry, the app navigates to \"/admin\"; otherwise it shows an English error message and remains on \"/admin/login\"."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
           "operation": "modify",
-          "description": "Align the login submit flow with the app's existing password-admin token mechanism: call backend admin login, store the returned token in sessionStorage using the existing helper, then trigger admin verification and navigate to \"/admin\" on success; ensure invalid credentials reliably surface an error and do not navigate."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Ensure admin verification query behavior remains consistent with the selected \"authorization\" component's frontend guidance (e.g., handle authorization failures gracefully and keep verification dependent on the stored admin token). Verify the component's usage instructions before implementing."
+          "description": "Refactor the \"Retry Verification\" handler to use the same deterministic admin verification helper used by the main login flow, and ensure it appends a clear retry-related entry to the diagnostic log without clearing it in a way that hides the retry attempt. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Fix admin dashboard actions so approve/reject and verify/reject operate on the correct underlying load IDs and user principals, and refresh UI after mutations.",
+      "summary": "Add defensive diagnostics so missing prerequisites (token/actor/query readiness) show clear English errors and always render the diagnostic log without crashing.",
       "acceptanceCriteria": [
-        "Approving/rejecting a specific pending load updates that specific load in the backend and the UI refreshes to reflect the change.",
-        "Verifying/rejecting a specific client updates that specific client's verification status in the backend and the UI refreshes to reflect the change.",
-        "Verifying/rejecting a specific transporter updates that specific transporter's verification status in the backend and the UI refreshes to reflect the change.",
-        "No admin dashboard action uses an index-derived ID (e.g., \"L1\", \"L2\") or a non-principal identifier (e.g., email) when calling backend admin mutation methods that require true IDs/principals."
+        "When verification cannot be completed due to missing prerequisites (e.g., token missing), the page shows an English error message rather than throwing an exception.",
+        "Diagnostic log entries continue to render even when a step fails, and no uncaught exception occurs."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
           "operation": "modify",
-          "description": "Update dashboard section list rendering and button click handlers to use true identifiers from identifier-inclusive query results (loadId for loads; Principal for clients/transporters) rather than placeholder/index-derived IDs or emails. Ensure list keys and action arguments are driven by the true IDs/principals and that post-mutation UI refresh occurs via existing React Query invalidations."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Adjust/extend admin dashboard query hooks to return identifier-inclusive data used by action handlers, and ensure relevant queries are invalidated/refetched after approve/verify mutations so the dashboard updates without a full refresh."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Consume identifier-inclusive admin query results in React Query hooks and dashboard UI to support correct admin actions and refetch after mutations.",
-      "acceptanceCriteria": [
-        "Backend provides a query for pending loads that includes each load's loadId alongside the Load data.",
-        "Backend provides a query for approved loads that includes each load's loadId alongside the Load data.",
-        "Backend provides an admin query for clients that includes each client's Principal alongside the ClientInfo data (so the frontend can call verifyClient with a real Principal).",
-        "Backend provides an admin query for transporters that includes each transporter's Principal alongside the TransporterDetails data (so the frontend can call verifyTransporter with a real Principal).",
-        "Frontend admin dashboard uses these identifier-inclusive query results to drive button click handlers (approve/reject/verify) with correct arguments.",
-        "All impacted queries are invalidated/refetched after mutations so the dashboard reflects changes without requiring a full page refresh."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add/adjust React Query hooks for admin-only lists to consume identifier-inclusive backend capabilities (e.g., pending loads with loadId, clients with Principal, transporters with Principal, and approved loads with loadId when available). Where the type surface is not yet present, use a safe runtime access pattern that avoids TypeScript breakage while still enabling the dashboard to migrate to the new identifier-inclusive results."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Switch admin dashboard tabs/sections to use the new identifier-inclusive hooks and wire their results into approve/reject/verify handlers. Ensure all impacted queries are invalidated/refetched after mutations so state updates are reflected immediately."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Keep /admin access-controlled: redirect unauthenticated users to /admin/login; allow verified admins; support sign-out clearing admin session.",
-      "acceptanceCriteria": [
-        "Navigating directly to \"/admin\" without a valid admin session redirects to \"/admin/login\" (or otherwise prevents dashboard content from rendering).",
-        "After successful admin login and verification, navigating to \"/admin\" renders the dashboard content without access errors.",
-        "Signing out from the dashboard clears the admin session and returns the user to \"/admin/login\"."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/auth/RequireAdmin.tsx",
-          "operation": "modify",
-          "description": "Update admin route guarding so that navigating to \"/admin\" without a valid password-admin session (no stored admin token) redirects to \"/admin/login\" (not just rendering nothing). Keep verified-admin rendering behavior intact and continue handling verification errors gracefully. Verify the selected \"authorization\" component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Confirm the dashboard sign-out action clears the stored admin session token via the existing admin-token mechanism and navigates back to \"/admin/login\"; ensure this remains functional after any dashboard refactors."
+          "description": "Add explicit prerequisite checks and diagnostic stages for verification (e.g., actor unavailable, token missing, verification result unavailable) so failures are handled via English UI messages + diagnostic log entries instead of exceptions. Ensure all verification paths (post-login and retry) fail gracefully and keep the log rendering. Verify the component's usage instructions before implementing."
         }
       ]
     }

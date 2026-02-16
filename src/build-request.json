@@ -1,113 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Add Admin menu login and fix admin dashboard actions",
-  "projectName": "TruckTrack Admin",
-  "priority": "normal",
+  "title": "Fix admin login crash during verification (Cannot read properties of undefined reading '0')",
+  "projectName": "TruckTrack Africa",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
+      "text": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-5"
         ],
         "quotes": [
-          "Add an Admin button in the menu. When I click it, show a login form."
+          "this is what I see when I try to login"
         ]
       },
       "acceptanceCriteria": [
-        "Top navigation shows an \"Admin\" entry on desktop navigation.",
-        "Mobile menu shows an \"Admin\" entry when expanded.",
-        "Clicking \"Admin\" navigates to \"/admin/login\"."
+        "After submitting correct admin credentials, the login page does not show the error \"Cannot read properties of undefined (reading '0')\".",
+        "The admin verification step uses a React Query API that returns a deterministic boolean result (not relying on indexing into an undefined/void refetch return value).",
+        "If verification returns true, the app navigates to \"/admin\" and the admin dashboard renders.",
+        "If verification fails (false) or errors, the user remains on \"/admin/login\" and sees an English error message explaining verification failed, with a working \"Retry Verification\" action."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
-      "target": "both",
+      "text": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-5"
         ],
         "quotes": [
-          "The login should accept username Gushna and password Gushgesh#9. After login, show the admin dashboard that is functioning"
+          "this is what I see when I try to login"
         ]
       },
       "acceptanceCriteria": [
-        "Submitting username \"Gushna\" and password \"Gushgesh#9\" results in a successful login token being stored in session storage (using the app's existing admin-token mechanism).",
-        "After login, admin verification succeeds and the user is navigated to \"/admin\".",
-        "Submitting invalid credentials shows an error message and does not navigate to \"/admin\"."
+        "Tapping \"Retry Verification\" does not throw any runtime error and updates the diagnostic log with the retry attempt.",
+        "If admin verification succeeds after retry, the app navigates to \"/admin\"; otherwise it shows an English error message and remains on \"/admin/login\"."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "After login, show the admin dashboard that is functioning"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Approving/rejecting a specific pending load updates that specific load in the backend and the UI refreshes to reflect the change.",
-        "Verifying/rejecting a specific client updates that specific client's verification status in the backend and the UI refreshes to reflect the change.",
-        "Verifying/rejecting a specific transporter updates that specific transporter's verification status in the backend and the UI refreshes to reflect the change.",
-        "No admin dashboard action uses an index-derived ID (e.g., \"L1\", \"L2\") or a non-principal identifier (e.g., email) when calling backend admin mutation methods that require true IDs/principals."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "admin dashboard that is functioning"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend provides a query for pending loads that includes each load's loadId alongside the Load data.",
-        "Backend provides a query for approved loads that includes each load's loadId alongside the Load data.",
-        "Backend provides an admin query for clients that includes each client's Principal alongside the ClientInfo data (so the frontend can call verifyClient with a real Principal).",
-        "Backend provides an admin query for transporters that includes each transporter's Principal alongside the TransporterDetails data (so the frontend can call verifyTransporter with a real Principal).",
-        "Frontend admin dashboard uses these identifier-inclusive query results to drive button click handlers (approve/reject/verify) with correct arguments.",
-        "All impacted queries are invalidated/refetched after mutations so the dashboard reflects changes without requiring a full page refresh."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
+      "text": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-5"
         ],
         "quotes": [
-          "After login, show the admin dashboard that is functioning"
+          "Cannot read properties of undefined (reading '0')"
         ]
       },
       "acceptanceCriteria": [
-        "Navigating directly to \"/admin\" without a valid admin session redirects to \"/admin/login\" (or otherwise prevents dashboard content from rendering).",
-        "After successful admin login and verification, navigating to \"/admin\" renders the dashboard content without access errors.",
-        "Signing out from the dashboard clears the admin session and returns the user to \"/admin/login\"."
+        "When verification cannot be completed due to missing prerequisites (e.g., token missing), the page shows an English error message rather than throwing an exception.",
+        "Diagnostic log entries continue to render even when a step fails, and no uncaught exception occurs."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (Shadcn UI components); compose them instead.",
-    "Do not modify frontend immutable paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts[x], frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
-    "Keep all backend logic in the single Motoko actor in backend/main.mo; only add backend/migration.mo changes if stable state schema changes require it."
+    "Do not edit files under frontend/src/components/ui (read-only shadcn components).",
+    "Keep backend as a single Motoko actor in backend/main.mo; only introduce a migration if persistent state changes are required (not expected for this fix).",
+    "Use English for any user-facing text related to login/verification errors."
   ],
   "nonGoals": [
-    "Do not add third-party authentication providers (only existing Internet Identity + the existing password-admin token mechanism).",
-    "Do not add new admin features beyond making the existing admin dashboard sections and clicks function correctly.",
-    "Do not introduce external databases or non-Motoko backend services."
+    "Changing the hardcoded backend admin username/password or admin token value.",
+    "Implementing Internet Identity-based admin authentication (admin remains password/token based).",
+    "Adding new admin features in the dashboard beyond fixing the login/verification crash."
   ],
   "imageRequirements": {
     "required": [],

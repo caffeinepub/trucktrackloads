@@ -210,13 +210,25 @@ export function getSecretParameter(paramName: string): string | null {
 }
 
 /**
- * Sets the admin token in sessionStorage and broadcasts a change event
- * 
- * @param token - The admin token to store
+ * Admin Token Management Functions
+ * These functions manage the password-based admin authentication token
+ */
+
+/**
+ * Stores the admin token in sessionStorage and broadcasts a change event
+ * @param token - The admin authentication token
  */
 export function setAdminToken(token: string): void {
     storeSessionParameter(ADMIN_TOKEN_KEY, token);
     window.dispatchEvent(new Event(ADMIN_TOKEN_CHANGE_EVENT));
+}
+
+/**
+ * Retrieves the admin token from sessionStorage
+ * @returns The admin token if found, null otherwise
+ */
+export function getAdminToken(): string | null {
+    return getSessionParameter(ADMIN_TOKEN_KEY);
 }
 
 /**
@@ -228,18 +240,8 @@ export function clearAdminToken(): void {
 }
 
 /**
- * Gets the current admin token from sessionStorage
- * 
- * @returns The admin token if found, null otherwise
- */
-export function getAdminToken(): string | null {
-    return getSessionParameter(ADMIN_TOKEN_KEY);
-}
-
-/**
- * Checks if a password admin session exists
- * 
- * @returns True if an admin token is stored in sessionStorage, false otherwise
+ * Checks if a password-based admin session exists
+ * @returns True if an admin token is present in sessionStorage
  */
 export function hasPasswordAdminSession(): boolean {
     return getAdminToken() !== null;
