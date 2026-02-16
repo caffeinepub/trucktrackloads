@@ -3,14 +3,16 @@ import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
-
 import AccessControl "authorization/access-control";
+import UserApproval "user-approval/approval";
 import Text "mo:core/Text";
-import Storage "blob-storage/Storage";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
+import Time "mo:core/Time";
 
-// Explicit migration using the with clause
+
+// Apply migration on upgrade
 
 actor {
   include MixinStorage();
@@ -18,7 +20,41 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Types
+  let approvalState = UserApproval.initState(accessControlState);
+
+  // ------------- Admin login password system -----------------
+  var adminCredentials : (Text, Text) = ("Gushna", "Gushgesh#9");
+  let hiddenAdminToken = "XXI%pccQ2024^aCFEiNE";
+
+  public shared ({ caller }) func adminLogin(username : Text, password : Text) : async Text {
+    let (existingUsername, existingPassword) = adminCredentials;
+    if (existingUsername == username and existingPassword == password) {
+      hiddenAdminToken;
+    } else {
+      Runtime.trap("Incorrect username or password. Usage is restricted to admin account only!");
+    };
+  };
+
+  public shared ({ caller }) func updateCredentials(username : Text, password : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update credentials");
+    };
+    adminCredentials := (username, password);
+  };
+
+  // Trucking system
+  public type TruckType = {
+    #triaxle;
+    #superlinkFlatdeck;
+    #sideTipper;
+  };
+
+  public type TruckTypeOption = {
+    id : Nat;
+    name : Text;
+    truckType : TruckType;
+  };
+
   type ContactInfo = {
     name : Text;
     email : Text;
@@ -31,13 +67,20 @@ actor {
     endDate : Int;
   };
 
-  type ClientInfo = {
+  public type ClientVerificationStatus = {
+    #verified;
+    #pending;
+    #rejected;
+  };
+
+  public type ClientInfo = {
     company : Text;
     contactPerson : Text;
     email : Text;
     phone : Text;
     address : Text;
     contract : ContractDetails;
+    verificationStatus : ClientVerificationStatus;
   };
 
   type LoadConfirmation = {
@@ -45,7 +88,13 @@ actor {
     confirmationFiles : [Storage.ExternalBlob];
   };
 
-  type TransporterDetails = {
+  public type TransporterVerificationStatus = {
+    #verified;
+    #pending;
+    #rejected;
+  };
+
+  public type TransporterDetails = {
     company : Text;
     contactPerson : Text;
     email : Text;
@@ -53,6 +102,8 @@ actor {
     address : Text;
     documents : [Storage.ExternalBlob];
     contract : ContractDetails;
+    verificationStatus : TransporterVerificationStatus;
+    truckType : TruckType;
   };
 
   public type Load = {
@@ -61,6 +112,7 @@ actor {
     weight : Float;
     loadingLocation : Text;
     offloadingLocation : Text;
+    truckType : TruckType;
     isApproved : Bool;
     assignedTransporter : ?Principal;
     tracking : ?TrackingUpdate;
@@ -79,6 +131,32 @@ actor {
     role : Text;
   };
 
+  public type LiveLocation = {
+    latitude : Float;
+    longitude : Float;
+    locationName : Text;
+    timestamp : Int;
+  };
+
+  public type TransporterLocationUpdate = {
+    transporterId : Principal;
+    location : LiveLocation;
+    truckType : TruckType;
+    timestamp : Int;
+  };
+
+  public type LocationEvidence = {
+    transporterId : Principal;
+    location : LiveLocation;
+    screenshot : Storage.ExternalBlob;
+    uploadedAt : Int;
+  };
+
+  public type TransporterStatus = {
+    statusText : Text;
+    timestamp : Int;
+  };
+
   // Data Stores
   let clients = Map.empty<Principal, ClientInfo>();
   let transporters = Map.empty<Principal, TransporterDetails>();
@@ -86,9 +164,36 @@ actor {
   var loadCount = 0;
 
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let liveLocations = Map.empty<Principal, LiveLocation>();
+  let locationEvidenceStore = Map.empty<Principal, [LocationEvidence]>();
+  let transporterStatusMap = Map.empty<Principal, TransporterStatus>();
 
   var androidApkLink : ?Text = null;
 
+  // New Approval Methods
+  public query ({ caller }) func isCallerApproved() : async Bool {
+    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  public shared ({ caller }) func requestApproval() : async () {
+    UserApproval.requestApproval(approvalState, caller);
+  };
+
+  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.setApproval(approvalState, user, status);
+  };
+
+  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.listApprovals(approvalState);
+  };
+
+  // App Methods
   public query ({ caller }) func getAndroidApkLink() : async ?Text {
     androidApkLink;
   };
@@ -121,11 +226,10 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Contact mechanism - allows guests to submit contact forms
+  // Contact mechanism
   let contacts = Map.empty<Principal, ContactInfo>();
 
   public shared ({ caller }) func saveContactInfo(contact : ContactInfo) : async () {
-    // No authorization check - allows guests to submit contact forms
     contacts.add(caller, contact);
   };
 
@@ -137,57 +241,62 @@ actor {
     iter.toArray();
   };
 
-  // Clients
-  public query ({ caller }) func getCallerClientInfo() : async ?ClientInfo {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
+  public shared ({ caller }) func registerClient(clientInfo : ClientInfo) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can register as clients");
     };
-    clients.get(caller);
+
+    let clientWithPendingStatus = { clientInfo with verificationStatus = #pending };
+
+    clients.add(caller, clientWithPendingStatus);
   };
 
-  public query ({ caller }) func getClientInfo(client : Principal) : async ?ClientInfo {
-    if (caller != client and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
-    clients.get(client);
-  };
-
-  public query ({ caller }) func getAllClients() : async [ClientInfo] {
+  public shared ({ caller }) func verifyClient(client : Principal, status : ClientVerificationStatus) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all clients");
+      Runtime.trap("Unauthorized: Only admins can verify clients");
     };
-    let iter = clients.values();
-    iter.toArray();
+
+    let existing = switch (clients.get(client)) {
+      case (null) {
+        Runtime.trap("No client found for provided principal");
+      };
+      case (?clientInfo) {
+        clientInfo;
+      };
+    };
+
+    let updatedClient = { existing with verificationStatus = status };
+    clients.add(client, updatedClient);
   };
 
-  public shared ({ caller }) func saveCallerClientInfo(clientInfo : ClientInfo) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-    clients.add(caller, clientInfo);
-  };
-
-  // Transporters
-  public shared ({ caller }) func saveTransporterDetails(details : TransporterDetails) : async () {
+  public shared ({ caller }) func registerTransporter(details : TransporterDetails) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can register as transporters");
     };
-    transporters.add(caller, details);
+
+    let detailsWithPendingStatus = {
+      details with
+      verificationStatus = #pending;
+    };
+    transporters.add(caller, detailsWithPendingStatus);
   };
 
-  public query ({ caller }) func getTransporter(transporter : Principal) : async ?TransporterDetails {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can view transporter details");
+  public shared ({ caller }) func verifyTransporter(transporter : Principal, status : TransporterVerificationStatus) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can verify transporters");
     };
-    transporters.get(transporter);
-  };
 
-  public query ({ caller }) func getAllTransporters() : async [TransporterDetails] {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can view all transporters");
+    let existing = switch (transporters.get(transporter)) {
+      case (null) {
+        Runtime.trap("No transporter found for provided principal");
+      };
+      case (?transporterInfo) {
+        transporterInfo;
+      };
     };
-    let iter = transporters.values();
-    iter.toArray();
+
+    let updatedTransporter = { existing with verificationStatus = status };
+    transporters.add(transporter, updatedTransporter);
   };
 
   public shared ({ caller }) func uploadTransporterDoc(blob : Storage.ExternalBlob) : async () {
@@ -207,18 +316,66 @@ actor {
     transporters.add(caller, updated);
   };
 
-  // Loads
-  public shared ({ caller }) func createLoad(load : Load) : async Text {
+  public query ({ caller }) func getCallerClientInfo() : async ?ClientInfo {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only clients can create loads");
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    clients.get(caller);
+  };
+
+  public query ({ caller }) func getClientInfo(client : Principal) : async ?ClientInfo {
+    if (caller != client and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile or admin can view any");
+    };
+    clients.get(client);
+  };
+
+  public query ({ caller }) func getAllClients() : async [ClientInfo] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view all clients");
+    };
+    let iter = clients.values();
+    iter.toArray();
+  };
+
+  public query ({ caller }) func getCallerTransporterDetails() : async ?TransporterDetails {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    transporters.get(caller);
+  };
+
+  public query ({ caller }) func getTransporter(transporter : Principal) : async ?TransporterDetails {
+    if (caller != transporter and not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Can only view your own profile or admin can view any");
+    };
+    transporters.get(transporter);
+  };
+
+  public query ({ caller }) func getAllTransporters() : async [TransporterDetails] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all transporters");
+    };
+    let iter = transporters.values();
+    iter.toArray();
+  };
+
+  public shared ({ caller }) func createLoad(load : Load) : async Text {
+    let clientInfo = switch (clients.get(caller)) {
+      case (null) {
+        Runtime.trap("Client not found for provided principal");
+      };
+      case (?clientInfo) { clientInfo };
     };
 
-    // Verify the caller is the client in the load
+    if (clientInfo.verificationStatus != #verified) {
+      Runtime.trap("Unauthorized: Only verified clients can create loads");
+    };
+
     if (load.client != caller) {
       Runtime.trap("Unauthorized: Cannot create loads for other users");
     };
 
-    // Ensure new loads are not pre-approved or pre-assigned
     if (load.isApproved) {
       Runtime.trap("Unauthorized: Cannot create pre-approved loads");
     };
@@ -229,7 +386,15 @@ actor {
 
     loadCount += 1;
     let loadId = "L" # loadCount.toText();
-    loads.add(loadId, load);
+
+    switch (load.truckType) {
+      case (#triaxle or #superlinkFlatdeck or #sideTipper) {
+        loads.add(loadId, { load with truckType = load.truckType });
+      };
+      case (_) {
+        Runtime.trap("Invalid truck type");
+      };
+    };
     loadId;
   };
 
@@ -238,7 +403,9 @@ actor {
       Runtime.trap("Unauthorized: Only admins can approve loads");
     };
     let load = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
     if (isApproved) {
@@ -256,7 +423,9 @@ actor {
       Runtime.trap("Unauthorized: Only admins can assign transporters");
     };
     let existing = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
     let load : Load = {
@@ -267,7 +436,9 @@ actor {
 
   public shared ({ caller }) func updateLoad(loadId : Text, load : Load) : async () {
     let existing = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
 
@@ -280,17 +451,14 @@ actor {
 
     // Non-admin owners can only update certain fields
     if (not isAdmin and isOwner) {
-      // Verify client hasn't changed
       if (load.client != existing.client) {
         Runtime.trap("Unauthorized: Cannot change load owner");
       };
 
-      // Verify approval status hasn't changed
       if (load.isApproved != existing.isApproved) {
         Runtime.trap("Unauthorized: Only admins can change approval status");
       };
 
-      // Verify assigned transporter hasn't changed
       if (load.assignedTransporter != existing.assignedTransporter) {
         Runtime.trap("Unauthorized: Only admins can change assigned transporter");
       };
@@ -301,7 +469,9 @@ actor {
 
   public shared ({ caller }) func deleteLoad(loadId : Text) : async () {
     let existing = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
     if (not (AccessControl.isAdmin(accessControlState, caller)) and existing.client != caller) {
@@ -312,7 +482,7 @@ actor {
 
   public query ({ caller }) func getClientLoads(client : Principal) : async [Load] {
     if (caller != client and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own loads");
+      Runtime.trap("Unauthorized: Can only view your own loads or admin can view any");
     };
     let iter = loads.values();
     let allLoads = iter.toArray();
@@ -321,7 +491,7 @@ actor {
 
   public query ({ caller }) func getTransporterLoads(transporter : Principal) : async [Load] {
     if (caller != transporter and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own assigned loads");
+      Runtime.trap("Unauthorized: Can only view your own assigned loads or admin can view any");
     };
     let iter = loads.values();
     let allLoads = iter.toArray();
@@ -337,10 +507,21 @@ actor {
     allLoads.filter(func(l) { l.isApproved });
   };
 
+  public query ({ caller }) func getAllPendingLoads() : async [Load] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view pending loads");
+    };
+    let iter = loads.values();
+    let allLoads = iter.toArray();
+    allLoads.filter(func(l) { not l.isApproved });
+  };
+
   // Tracking
   public query ({ caller }) func getLoadTracking(loadId : Text) : async ?TrackingUpdate {
     let load = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
     let isClient = load.client == caller;
@@ -356,7 +537,9 @@ actor {
 
   public shared ({ caller }) func updateLoadTracking(loadId : Text, update : TrackingUpdate) : async () {
     let load = switch (loads.get(loadId)) {
-      case (null) { Runtime.trap("No load with id " # loadId # " exists") };
+      case (null) {
+        Runtime.trap("No load with id " # loadId # " exists");
+      };
       case (?profile) { profile };
     };
     if (load.assignedTransporter != ?caller) {
@@ -366,5 +549,127 @@ actor {
       load with tracking = ?update;
     };
     loads.add(loadId, updated);
+  };
+
+  // Truck Type Options
+  public query ({ caller }) func getTruckTypeOptions() : async [TruckTypeOption] {
+    Array.tabulate<TruckTypeOption>(
+      3,
+      func(i) {
+        switch (i) {
+          case (0) { { id = 0; name = "Triaxle"; truckType = #triaxle } };
+          case (1) { { id = 1; name = "Superlink Flatdeck"; truckType = #superlinkFlatdeck } };
+          case (2) { { id = 2; name = "Side Tipper"; truckType = #sideTipper } };
+          case (_) { { id = 0; name = "Triaxle"; truckType = #triaxle } };
+        };
+      },
+    );
+  };
+
+  // --- NEW STORAGE API FUNCTIONS ----
+
+  // Transporter Live Location Tracking
+  public shared ({ caller }) func updateTransporterLocation(location : LiveLocation) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only signed-in transporters can submit location updates");
+    };
+
+    let transporterDetails = switch (transporters.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Only registered transporters can submit location updates") };
+      case (?details) { details };
+    };
+
+    let locationWithTimestamp : LiveLocation = {
+      location with timestamp = Time.now();
+    };
+
+    liveLocations.add(caller, locationWithTimestamp);
+  };
+
+  // Admin-only function to get all transporter locations and details
+  public query ({ caller }) func getAllTransportersWithLocations() : async [(Principal, TransporterDetails, ?LiveLocation)] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view transporter locations");
+    };
+
+    let transportersArray = transporters.toArray();
+    let result = Array.tabulate(
+      transportersArray.size(),
+      func(i) {
+        let (transporterId, details) = transportersArray[i];
+        let location = liveLocations.get(transporterId);
+        (transporterId, details, location);
+      },
+    );
+    result;
+  };
+
+  // New function to handle location screenshots
+  public shared ({ caller }) func addLocationEvidence(location : LiveLocation, screenshot : Storage.ExternalBlob) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only signed-in users can submit location evidence");
+    };
+
+    // Verify caller is a registered transporter
+    let transporterDetails = switch (transporters.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Only registered transporters can submit location evidence") };
+      case (?details) { details };
+    };
+
+    let evidence : LocationEvidence = {
+      transporterId = caller;
+      location;
+      screenshot;
+      uploadedAt = Time.now();
+    };
+
+    let existingEvidence = switch (locationEvidenceStore.get(caller)) {
+      case (null) { [evidence] };
+      case (?evidenceArray) { evidenceArray.concat([evidence]) };
+    };
+
+    locationEvidenceStore.add(caller, existingEvidence);
+  };
+
+  public query ({ caller }) func getLocationEvidence(transporterId : Principal) : async [LocationEvidence] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view location evidence");
+    };
+    switch (locationEvidenceStore.get(transporterId)) {
+      case (null) { [] };
+      case (?evidenceArray) { evidenceArray };
+    };
+  };
+
+  // Set transporter status
+  public shared ({ caller }) func setTransporterStatus(statusText : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only signed-in transporters can submit statuses");
+    };
+    switch (transporters.get(caller)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Only registered transporters can submit statuses");
+      };
+      case (_details) { () };
+    };
+    let status : TransporterStatus = {
+      statusText;
+      timestamp = Time.now();
+    };
+    transporterStatusMap.add(caller, status);
+  };
+
+  // Get individual transporter status (publicly accessible so admin can call for any transporter
+  public query ({ caller }) func getTransporterStatus(transporterId : Principal) : async ?TransporterStatus {
+    transporterStatusMap.get(transporterId);
+  };
+
+  // Get all transporter statuses (admin-only)
+  public query ({ caller }) func getAllTransporterStatuses() : async [(Principal, TransporterStatus)] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all transporter statuses");
+    };
+    let iter = transporterStatusMap.entries();
+    iter.toArray();
   };
 };

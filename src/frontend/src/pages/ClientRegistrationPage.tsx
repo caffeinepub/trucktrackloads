@@ -4,16 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
-import { useGetCallerClientInfo, useSaveCallerClientInfo } from '@/hooks/useQueries';
+import { useGetCallerClientInfo, useRegisterClient } from '@/hooks/useQueries';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import ProfileSetupModal from '@/components/auth/ProfileSetupModal';
+import { ClientVerificationStatus } from '../backend';
 
 export default function ClientRegistrationPage() {
   const { isAuthenticated, showProfileSetup } = useAuth();
   const { data: existingInfo, isLoading: loadingInfo } = useGetCallerClientInfo();
-  const saveClientInfo = useSaveCallerClientInfo();
+  const registerClient = useRegisterClient();
 
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
@@ -47,7 +50,7 @@ export default function ClientRegistrationPage() {
     }
 
     try {
-      await saveClientInfo.mutateAsync({
+      await registerClient.mutateAsync({
         company: company.trim(),
         contactPerson: contactPerson.trim(),
         email: email.trim(),
@@ -58,11 +61,70 @@ export default function ClientRegistrationPage() {
           startDate: BigInt(0),
           endDate: BigInt(0),
         },
+        verificationStatus: ClientVerificationStatus.pending,
       });
-      toast.success(existingInfo ? 'Profile updated successfully!' : 'Registration successful!');
+      toast.success(existingInfo ? 'Profile updated successfully!' : 'Registration submitted! Awaiting admin approval.');
     } catch (error) {
       toast.error('Failed to save information. Please try again.');
       console.error(error);
+    }
+  };
+
+  const getVerificationStatusBadge = (status: ClientVerificationStatus) => {
+    switch (status) {
+      case ClientVerificationStatus.verified:
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Verified
+          </Badge>
+        );
+      case ClientVerificationStatus.pending:
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending Approval
+          </Badge>
+        );
+      case ClientVerificationStatus.rejected:
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+    }
+  };
+
+  const getVerificationAlert = (status: ClientVerificationStatus) => {
+    switch (status) {
+      case ClientVerificationStatus.verified:
+        return (
+          <Alert className="bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-700" />
+            <AlertDescription className="text-green-700">
+              Your client profile has been verified. You can now post loads to the load board.
+            </AlertDescription>
+          </Alert>
+        );
+      case ClientVerificationStatus.pending:
+        return (
+          <Alert className="bg-yellow-50 border-yellow-200">
+            <Clock className="h-4 w-4 text-yellow-700" />
+            <AlertDescription className="text-yellow-700">
+              Your registration is pending admin approval. You will be able to post loads once your profile is verified.
+            </AlertDescription>
+          </Alert>
+        );
+      case ClientVerificationStatus.rejected:
+        return (
+          <Alert className="bg-red-50 border-red-200">
+            <AlertCircle className="h-4 w-4 text-red-700" />
+            <AlertDescription className="text-red-700">
+              Your registration was not approved. Please contact support at moleleholdings101@gmail.com for more information.
+            </AlertDescription>
+          </Alert>
+        );
     }
   };
 
@@ -70,23 +132,34 @@ export default function ClientRegistrationPage() {
     <>
       <ProfileSetupModal open={showProfileSetup} />
 
-      <div className="container py-12">
+      <div className="container py-10">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Client Registration</h1>
+            <h1 className="text-4xl font-semibold mb-2">Client Registration</h1>
             <p className="text-muted-foreground">
               {existingInfo ? 'Update your client profile' : 'Register as a client to post loads'}
             </p>
           </div>
 
-          <Card>
+          {existingInfo && (
+            <div className="mb-6">
+              {getVerificationAlert(existingInfo.verificationStatus)}
+            </div>
+          )}
+
+          <Card className="shadow-card">
             <CardHeader>
-              <CardTitle>{existingInfo ? 'Update Profile' : 'Client Information'}</CardTitle>
-              <CardDescription>
-                {existingInfo
-                  ? 'Update your company details and contact information'
-                  : 'Provide your company details to get started'}
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{existingInfo ? 'Update Profile' : 'Client Information'}</CardTitle>
+                  <CardDescription>
+                    {existingInfo
+                      ? 'Update your company details and contact information'
+                      : 'Provide your company details to get started'}
+                  </CardDescription>
+                </div>
+                {existingInfo && getVerificationStatusBadge(existingInfo.verificationStatus)}
+              </div>
             </CardHeader>
             <CardContent>
               {!isAuthenticated ? (
@@ -161,8 +234,8 @@ export default function ClientRegistrationPage() {
                       rows={4}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={saveClientInfo.isPending}>
-                    {saveClientInfo.isPending ? (
+                  <Button type="submit" className="w-full" disabled={registerClient.isPending}>
+                    {registerClient.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...

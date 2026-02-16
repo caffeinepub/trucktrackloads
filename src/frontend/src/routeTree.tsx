@@ -1,19 +1,27 @@
-import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router';
-import SiteLayout from './components/layout/SiteLayout';
+import { createRootRoute, createRoute, createRouter, createHashHistory, Outlet } from '@tanstack/react-router';
+import TopNav from './components/layout/TopNav';
+import Footer from './components/layout/Footer';
+import BottomAd from './components/ads/BottomAd';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import LoadBoardPage from './pages/LoadBoardPage';
-import TransporterRegistrationPage from './pages/TransporterRegistrationPage';
 import ClientRegistrationPage from './pages/ClientRegistrationPage';
+import TransporterRegistrationPage from './pages/TransporterRegistrationPage';
 import ContactPage from './pages/ContactPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminPasswordLoginPage from './pages/AdminPasswordLoginPage';
 
 const rootRoute = createRootRoute({
   component: () => (
-    <SiteLayout>
-      <Outlet />
-    </SiteLayout>
+    <div className="flex min-h-screen flex-col bg-background">
+      <TopNav />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <BottomAd />
+      <Footer />
+    </div>
   ),
 });
 
@@ -41,16 +49,16 @@ const loadBoardRoute = createRoute({
   component: LoadBoardPage,
 });
 
-const transporterRegistrationRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/transporter-registration',
-  component: TransporterRegistrationPage,
-});
-
 const clientRegistrationRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/client-registration',
+  path: '/register/client',
   component: ClientRegistrationPage,
+});
+
+const transporterRegistrationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register/transporter',
+  component: TransporterRegistrationPage,
 });
 
 const contactRoute = createRoute({
@@ -65,13 +73,33 @@ const adminRoute = createRoute({
   component: AdminDashboardPage,
 });
 
-export const routeTree = rootRoute.addChildren([
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/login',
+  component: AdminPasswordLoginPage,
+});
+
+const routeTree = rootRoute.addChildren([
   indexRoute,
   aboutRoute,
   servicesRoute,
   loadBoardRoute,
-  transporterRegistrationRoute,
   clientRegistrationRoute,
+  transporterRegistrationRoute,
   contactRoute,
   adminRoute,
+  adminLoginRoute,
 ]);
+
+const hashHistory = createHashHistory();
+
+export const router = createRouter({ 
+  routeTree, 
+  history: hashHistory,
+});
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}

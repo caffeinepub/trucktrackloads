@@ -1,77 +1,99 @@
 {
   "kind": "build_request",
-  "title": "Fix /admin route so the admin access gate and login prompt always render",
+  "title": "Fix admin credential login so the admin dashboard opens reliably",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-44",
-      "text": "Fix the Admin page rendering so navigating to the admin route reliably shows the admin access gate UI (loading, sign-in prompt, or access denied) instead of a blank/non-rendering screen.",
+      "id": "REQ-1",
+      "text": "Fix the password-based admin session initialization so that the admin dashboard can be opened even when the user is not authenticated with Internet Identity: when a sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token, regardless of Internet Identity auth state.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-3"
         ],
         "quotes": [
-          "it doesn't show the admin page even the login access to enter details fix this"
+          "No it doesn't open"
         ]
       },
       "acceptanceCriteria": [
-        "When visiting \"/#/admin\" while signed out, the page renders the AdminSignInPrompt UI (not a blank page).",
-        "When visiting \"/#/admin\" while signed in but not an admin, the page renders the AccessDeniedScreen UI (not a blank page).",
-        "When visiting \"/#/admin\" while signed in as an admin, the Admin Dashboard UI renders.",
-        "The admin route continues to exist at path \"/admin\" in TanStack Router (hash history), and the app remains hash-routed (no switch away from createHashHistory).",
-        "Any runtime error occurring in the admin page route (including during auth/role checks or initial admin dashboard render) is caught and replaced with a visible error state that includes a clear English message and a retry action (so users never see a completely blank admin page)."
+        "When \"caffeineAdminToken\" exists in sessionStorage and the user is not logged in with Internet Identity, visiting the admin route renders the Admin Dashboard (or a clear admin verification error state) rather than redirecting back to /admin/login indefinitely.",
+        "The actor initialization flow calls \"_initializeAccessControlWithSecret\" with the stored token for password-admin sessions (not only when Internet Identity is present)."
       ]
     },
     {
-      "id": "REQ-45",
-      "text": "Ensure the primary navigation path to Admin works consistently in production by verifying that the header Admin link and any other Admin entry points navigate correctly in hash-based routing and do not depend on server-side rewrites.",
+      "id": "REQ-2",
+      "text": "Ensure the frontend recreates/refetches the actor and all admin-verification queries when the password-admin token changes: the actor query key must incorporate the current \"caffeineAdminToken\" value (or an equivalent reactive signal), and token updates triggered by storing/clearing the token must cause admin checks (e.g., isCallerAdmin) to re-run with the updated token.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-3"
         ],
         "quotes": [
-          "it doesn't show the admin page even the login access to enter details fix this"
+          "No it doesn't open"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the \"Admin\" link in the top navigation always navigates to the admin route and displays the admin gate UI.",
-        "The Footer \"Admin\" quick link continues to point to the hash route format \"/#/admin\" and successfully loads the admin gate UI.",
-        "Directly entering the URL with hash format \"/#/admin\" loads the admin gate UI without requiring any additional navigation steps."
+        "After a successful credential login (adminLogin), the admin token is stored and the next admin verification query uses the new token without requiring a page refresh.",
+        "After signing out (clearing \"caffeineAdminToken\"), admin verification queries no longer treat the user as admin and protected admin routes redirect to /admin/login."
       ]
     },
     {
-      "id": "REQ-46",
-      "text": "Improve the admin gate troubleshooting experience when auth or role/profile queries fail (e.g., backend unreachable) by displaying a clear English error message and a retry option on the /admin gate instead of staying indefinitely on \"Verifying access...\".",
+      "id": "REQ-3",
+      "text": "Fix admin-route navigation/guard behavior so it does not block or fail to render the admin dashboard: remove any imperative navigation calls performed during render in the admin guard and ensure redirects to \"/admin/login\" only occur after the token/auth state has been evaluated (to avoid redirect loops or blank screens).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-3"
         ],
         "quotes": [
-          "it doesn't show the admin page even the login access to enter details fix this"
+          "No it doesn't open"
         ]
       },
       "acceptanceCriteria": [
-        "If role/profile verification cannot complete due to an error, /admin shows a non-blocking error state (English text) with a retry action.",
-        "The loading state on /admin does not persist forever without any user feedback; the UI provides an actionable next step (retry and/or sign out/sign in again).",
-        "Existing three-state behavior (loading, unauthenticated prompt, authenticated non-admin denied) remains intact for normal successful cases."
+        "Navigating to \"/admin\" with a valid \"caffeineAdminToken\" renders the admin dashboard content (not a blank screen).",
+        "Navigating to \"/admin\" without a token reliably redirects to \"/admin/login\".",
+        "No React warnings/errors occur due to navigation being triggered during render for admin route guarding."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Fix routing configuration so that post-login navigation to the admin dashboard works in the deployed environment: the router must consistently use the intended history mode (hash-based routing) so that navigating to \"/admin\" from the login page actually loads the admin route in production builds.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "No it doesn't open"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a successful login on the admin login page, the app navigates to the admin dashboard and the route resolves correctly in the deployed build (no 404/blank screen).",
+        "Directly opening the admin dashboard URL in the deployed build works with the app’s configured routing mode (hash routing)."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts or frontend/src/hooks/useInternetIdentity.tsx (immutable paths).",
-    "Keep the backend as a single Motoko actor (no additional backend services).",
-    "Do not add email/password authentication; admin access must remain Internet Identity + authorized admin role."
+    "Do not edit files under frontend/src/components/ui (Shadcn UI sources must be composed, not modified).",
+    "Do not edit any paths listed as immutable: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if a stable-state schema upgrade is required."
   ],
   "nonGoals": [
-    "Granting admin access based on email address (e.g., moleleholdings101@gmail.com).",
-    "Adding a fixed admin username/password.",
-    "Changing routing style away from TanStack Router hash history."
+    "Do not add new admin features beyond making the existing credential-based login reliably open the admin dashboard.",
+    "Do not introduce new authentication providers or third-party auth integrations."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

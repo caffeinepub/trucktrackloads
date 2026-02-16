@@ -10,6 +10,9 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export type ApprovalStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export interface ClientInfo {
   'contract' : ContractDetails,
   'contactPerson' : string,
@@ -17,7 +20,11 @@ export interface ClientInfo {
   'company' : string,
   'address' : string,
   'phone' : string,
+  'verificationStatus' : ClientVerificationStatus,
 }
+export type ClientVerificationStatus = { 'verified' : null } |
+  { 'pending' : null } |
+  { 'rejected' : null };
 export interface ContactInfo {
   'name' : string,
   'email' : string,
@@ -29,11 +36,18 @@ export interface ContractDetails {
   'startDate' : bigint,
 }
 export type ExternalBlob = Uint8Array;
+export interface LiveLocation {
+  'latitude' : number,
+  'longitude' : number,
+  'timestamp' : bigint,
+  'locationName' : string,
+}
 export interface Load {
   'weight' : number,
   'client' : Principal,
   'isApproved' : boolean,
   'description' : string,
+  'truckType' : TruckType,
   'loadingLocation' : string,
   'tracking' : [] | [TrackingUpdate],
   'assignedTransporter' : [] | [Principal],
@@ -43,6 +57,12 @@ export interface Load {
 export interface LoadConfirmation {
   'orderId' : string,
   'confirmationFiles' : Array<ExternalBlob>,
+}
+export interface LocationEvidence {
+  'transporterId' : Principal,
+  'screenshot' : ExternalBlob,
+  'location' : LiveLocation,
+  'uploadedAt' : bigint,
 }
 export interface TrackingUpdate {
   'status' : string,
@@ -54,9 +74,30 @@ export interface TransporterDetails {
   'contract' : ContractDetails,
   'contactPerson' : string,
   'email' : string,
+  'truckType' : TruckType,
   'company' : string,
   'address' : string,
   'phone' : string,
+  'verificationStatus' : TransporterVerificationStatus,
+}
+export interface TransporterStatus {
+  'timestamp' : bigint,
+  'statusText' : string,
+}
+export type TransporterVerificationStatus = { 'verified' : null } |
+  { 'pending' : null } |
+  { 'rejected' : null };
+export type TruckType = { 'triaxle' : null } |
+  { 'superlinkFlatdeck' : null } |
+  { 'sideTipper' : null };
+export interface TruckTypeOption {
+  'id' : bigint,
+  'name' : string,
+  'truckType' : TruckType,
+}
+export interface UserApprovalInfo {
+  'status' : ApprovalStatus,
+  'principal' : Principal,
 }
 export interface UserProfile {
   'name' : string,
@@ -94,6 +135,8 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addLocationEvidence' : ActorMethod<[LiveLocation, ExternalBlob], undefined>,
+  'adminLogin' : ActorMethod<[string, string], string>,
   'approveLoad' : ActorMethod<[string, boolean], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignLoad' : ActorMethod<[string, Principal], undefined>,
@@ -102,26 +145,54 @@ export interface _SERVICE {
   'getAllApprovedLoads' : ActorMethod<[], Array<Load>>,
   'getAllClients' : ActorMethod<[], Array<ClientInfo>>,
   'getAllContactMessages' : ActorMethod<[], Array<[Principal, ContactInfo]>>,
+  'getAllPendingLoads' : ActorMethod<[], Array<Load>>,
+  'getAllTransporterStatuses' : ActorMethod<
+    [],
+    Array<[Principal, TransporterStatus]>
+  >,
   'getAllTransporters' : ActorMethod<[], Array<TransporterDetails>>,
+  'getAllTransportersWithLocations' : ActorMethod<
+    [],
+    Array<[Principal, TransporterDetails, [] | [LiveLocation]]>
+  >,
   'getAndroidApkLink' : ActorMethod<[], [] | [string]>,
   'getCallerClientInfo' : ActorMethod<[], [] | [ClientInfo]>,
+  'getCallerTransporterDetails' : ActorMethod<[], [] | [TransporterDetails]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClientInfo' : ActorMethod<[Principal], [] | [ClientInfo]>,
   'getClientLoads' : ActorMethod<[Principal], Array<Load>>,
   'getLoadTracking' : ActorMethod<[string], [] | [TrackingUpdate]>,
+  'getLocationEvidence' : ActorMethod<[Principal], Array<LocationEvidence>>,
   'getTransporter' : ActorMethod<[Principal], [] | [TransporterDetails]>,
   'getTransporterLoads' : ActorMethod<[Principal], Array<Load>>,
+  'getTransporterStatus' : ActorMethod<[Principal], [] | [TransporterStatus]>,
+  'getTruckTypeOptions' : ActorMethod<[], Array<TruckTypeOption>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'saveCallerClientInfo' : ActorMethod<[ClientInfo], undefined>,
+  'isCallerApproved' : ActorMethod<[], boolean>,
+  'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
+  'registerClient' : ActorMethod<[ClientInfo], undefined>,
+  'registerTransporter' : ActorMethod<[TransporterDetails], undefined>,
+  'requestApproval' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveContactInfo' : ActorMethod<[ContactInfo], undefined>,
-  'saveTransporterDetails' : ActorMethod<[TransporterDetails], undefined>,
   'setAndroidApkLink' : ActorMethod<[string], undefined>,
+  'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
+  'setTransporterStatus' : ActorMethod<[string], undefined>,
+  'updateCredentials' : ActorMethod<[string, string], undefined>,
   'updateLoad' : ActorMethod<[string, Load], undefined>,
   'updateLoadTracking' : ActorMethod<[string, TrackingUpdate], undefined>,
+  'updateTransporterLocation' : ActorMethod<[LiveLocation], undefined>,
   'uploadTransporterDoc' : ActorMethod<[ExternalBlob], undefined>,
+  'verifyClient' : ActorMethod<
+    [Principal, ClientVerificationStatus],
+    undefined
+  >,
+  'verifyTransporter' : ActorMethod<
+    [Principal, TransporterVerificationStatus],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

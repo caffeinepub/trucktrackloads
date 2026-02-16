@@ -3,6 +3,15 @@
  * Works with both hash-based and browser-based routing
  */
 
+const ADMIN_TOKEN_CHANGE_EVENT = 'caffeineAdminTokenChange';
+
+/**
+ * Dispatches a custom event to notify listeners that the admin token has changed
+ */
+function notifyTokenChange(): void {
+  window.dispatchEvent(new CustomEvent(ADMIN_TOKEN_CHANGE_EVENT));
+}
+
 /**
  * Extracts a URL parameter from the current URL
  * Works with both query strings (?param=value) and hash-based routing (#/?param=value)
@@ -42,6 +51,10 @@ export function getUrlParameter(paramName: string): string | null {
 export function storeSessionParameter(key: string, value: string): void {
     try {
         sessionStorage.setItem(key, value);
+        // Notify listeners if this is the admin token
+        if (key === 'caffeineAdminToken') {
+          notifyTokenChange();
+        }
     } catch (error) {
         console.warn(`Failed to store session parameter ${key}:`, error);
     }
@@ -93,6 +106,10 @@ export function getPersistedUrlParameter(paramName: string, storageKey?: string)
 export function clearSessionParameter(key: string): void {
     try {
         sessionStorage.removeItem(key);
+        // Notify listeners if this is the admin token
+        if (key === 'caffeineAdminToken') {
+          notifyTokenChange();
+        }
     } catch (error) {
         console.warn(`Failed to clear session parameter ${key}:`, error);
     }
@@ -205,4 +222,32 @@ export function getSecretFromHash(paramName: string): string | null {
  */
 export function getSecretParameter(paramName: string): string | null {
     return getSecretFromHash(paramName);
+}
+
+/**
+ * Checks if a password-admin session exists
+ */
+export function hasPasswordAdminSession(): boolean {
+  return getSessionParameter('caffeineAdminToken') !== null;
+}
+
+/**
+ * Gets the current admin token
+ */
+export function getAdminToken(): string | null {
+  return getSessionParameter('caffeineAdminToken');
+}
+
+/**
+ * Sets the admin token and notifies listeners
+ */
+export function setAdminToken(token: string): void {
+  storeSessionParameter('caffeineAdminToken', token);
+}
+
+/**
+ * Clears the admin token and notifies listeners
+ */
+export function clearAdminToken(): void {
+  clearSessionParameter('caffeineAdminToken');
 }

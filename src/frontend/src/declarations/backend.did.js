@@ -19,17 +19,28 @@ export const _CaffeineStorageRefillResult = IDL.Record({
   'success' : IDL.Opt(IDL.Bool),
   'topped_up_amount' : IDL.Opt(IDL.Nat),
 });
+export const LiveLocation = IDL.Record({
+  'latitude' : IDL.Float64,
+  'longitude' : IDL.Float64,
+  'timestamp' : IDL.Int,
+  'locationName' : IDL.Text,
+});
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
+});
+export const TruckType = IDL.Variant({
+  'triaxle' : IDL.Null,
+  'superlinkFlatdeck' : IDL.Null,
+  'sideTipper' : IDL.Null,
 });
 export const TrackingUpdate = IDL.Record({
   'status' : IDL.Text,
   'timestamp' : IDL.Int,
   'location' : IDL.Text,
 });
-export const ExternalBlob = IDL.Vec(IDL.Nat8);
 export const LoadConfirmation = IDL.Record({
   'orderId' : IDL.Text,
   'confirmationFiles' : IDL.Vec(ExternalBlob),
@@ -39,6 +50,7 @@ export const Load = IDL.Record({
   'client' : IDL.Principal,
   'isApproved' : IDL.Bool,
   'description' : IDL.Text,
+  'truckType' : TruckType,
   'loadingLocation' : IDL.Text,
   'tracking' : IDL.Opt(TrackingUpdate),
   'assignedTransporter' : IDL.Opt(IDL.Principal),
@@ -50,6 +62,11 @@ export const ContractDetails = IDL.Record({
   'contractText' : IDL.Text,
   'startDate' : IDL.Int,
 });
+export const ClientVerificationStatus = IDL.Variant({
+  'verified' : IDL.Null,
+  'pending' : IDL.Null,
+  'rejected' : IDL.Null,
+});
 export const ClientInfo = IDL.Record({
   'contract' : ContractDetails,
   'contactPerson' : IDL.Text,
@@ -57,25 +74,57 @@ export const ClientInfo = IDL.Record({
   'company' : IDL.Text,
   'address' : IDL.Text,
   'phone' : IDL.Text,
+  'verificationStatus' : ClientVerificationStatus,
 });
 export const ContactInfo = IDL.Record({
   'name' : IDL.Text,
   'email' : IDL.Text,
   'message' : IDL.Text,
 });
+export const TransporterStatus = IDL.Record({
+  'timestamp' : IDL.Int,
+  'statusText' : IDL.Text,
+});
+export const TransporterVerificationStatus = IDL.Variant({
+  'verified' : IDL.Null,
+  'pending' : IDL.Null,
+  'rejected' : IDL.Null,
+});
 export const TransporterDetails = IDL.Record({
   'documents' : IDL.Vec(ExternalBlob),
   'contract' : ContractDetails,
   'contactPerson' : IDL.Text,
   'email' : IDL.Text,
+  'truckType' : TruckType,
   'company' : IDL.Text,
   'address' : IDL.Text,
   'phone' : IDL.Text,
+  'verificationStatus' : TransporterVerificationStatus,
 });
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'role' : IDL.Text,
   'email' : IDL.Text,
+});
+export const LocationEvidence = IDL.Record({
+  'transporterId' : IDL.Principal,
+  'screenshot' : ExternalBlob,
+  'location' : LiveLocation,
+  'uploadedAt' : IDL.Int,
+});
+export const TruckTypeOption = IDL.Record({
+  'id' : IDL.Nat,
+  'name' : IDL.Text,
+  'truckType' : TruckType,
+});
+export const ApprovalStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
+});
+export const UserApprovalInfo = IDL.Record({
+  'status' : ApprovalStatus,
+  'principal' : IDL.Principal,
 });
 
 export const idlService = IDL.Service({
@@ -106,6 +155,8 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addLocationEvidence' : IDL.Func([LiveLocation, ExternalBlob], [], []),
+  'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'approveLoad' : IDL.Func([IDL.Text, IDL.Bool], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignLoad' : IDL.Func([IDL.Text, IDL.Principal], [], []),
@@ -118,9 +169,29 @@ export const idlService = IDL.Service({
       [IDL.Vec(IDL.Tuple(IDL.Principal, ContactInfo))],
       ['query'],
     ),
+  'getAllPendingLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+  'getAllTransporterStatuses' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterStatus))],
+      ['query'],
+    ),
   'getAllTransporters' : IDL.Func([], [IDL.Vec(TransporterDetails)], ['query']),
+  'getAllTransportersWithLocations' : IDL.Func(
+      [],
+      [
+        IDL.Vec(
+          IDL.Tuple(IDL.Principal, TransporterDetails, IDL.Opt(LiveLocation))
+        ),
+      ],
+      ['query'],
+    ),
   'getAndroidApkLink' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getCallerClientInfo' : IDL.Func([], [IDL.Opt(ClientInfo)], ['query']),
+  'getCallerTransporterDetails' : IDL.Func(
+      [],
+      [IDL.Opt(TransporterDetails)],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClientInfo' : IDL.Func([IDL.Principal], [IDL.Opt(ClientInfo)], ['query']),
@@ -130,26 +201,50 @@ export const idlService = IDL.Service({
       [IDL.Opt(TrackingUpdate)],
       ['query'],
     ),
+  'getLocationEvidence' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(LocationEvidence)],
+      ['query'],
+    ),
   'getTransporter' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(TransporterDetails)],
       ['query'],
     ),
   'getTransporterLoads' : IDL.Func([IDL.Principal], [IDL.Vec(Load)], ['query']),
+  'getTransporterStatus' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(TransporterStatus)],
+      ['query'],
+    ),
+  'getTruckTypeOptions' : IDL.Func([], [IDL.Vec(TruckTypeOption)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'saveCallerClientInfo' : IDL.Func([ClientInfo], [], []),
+  'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+  'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+  'registerClient' : IDL.Func([ClientInfo], [], []),
+  'registerTransporter' : IDL.Func([TransporterDetails], [], []),
+  'requestApproval' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveContactInfo' : IDL.Func([ContactInfo], [], []),
-  'saveTransporterDetails' : IDL.Func([TransporterDetails], [], []),
   'setAndroidApkLink' : IDL.Func([IDL.Text], [], []),
+  'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
+  'setTransporterStatus' : IDL.Func([IDL.Text], [], []),
+  'updateCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateLoad' : IDL.Func([IDL.Text, Load], [], []),
   'updateLoadTracking' : IDL.Func([IDL.Text, TrackingUpdate], [], []),
+  'updateTransporterLocation' : IDL.Func([LiveLocation], [], []),
   'uploadTransporterDoc' : IDL.Func([ExternalBlob], [], []),
+  'verifyClient' : IDL.Func([IDL.Principal, ClientVerificationStatus], [], []),
+  'verifyTransporter' : IDL.Func(
+      [IDL.Principal, TransporterVerificationStatus],
+      [],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -166,17 +261,28 @@ export const idlFactory = ({ IDL }) => {
     'success' : IDL.Opt(IDL.Bool),
     'topped_up_amount' : IDL.Opt(IDL.Nat),
   });
+  const LiveLocation = IDL.Record({
+    'latitude' : IDL.Float64,
+    'longitude' : IDL.Float64,
+    'timestamp' : IDL.Int,
+    'locationName' : IDL.Text,
+  });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
+  });
+  const TruckType = IDL.Variant({
+    'triaxle' : IDL.Null,
+    'superlinkFlatdeck' : IDL.Null,
+    'sideTipper' : IDL.Null,
   });
   const TrackingUpdate = IDL.Record({
     'status' : IDL.Text,
     'timestamp' : IDL.Int,
     'location' : IDL.Text,
   });
-  const ExternalBlob = IDL.Vec(IDL.Nat8);
   const LoadConfirmation = IDL.Record({
     'orderId' : IDL.Text,
     'confirmationFiles' : IDL.Vec(ExternalBlob),
@@ -186,6 +292,7 @@ export const idlFactory = ({ IDL }) => {
     'client' : IDL.Principal,
     'isApproved' : IDL.Bool,
     'description' : IDL.Text,
+    'truckType' : TruckType,
     'loadingLocation' : IDL.Text,
     'tracking' : IDL.Opt(TrackingUpdate),
     'assignedTransporter' : IDL.Opt(IDL.Principal),
@@ -197,6 +304,11 @@ export const idlFactory = ({ IDL }) => {
     'contractText' : IDL.Text,
     'startDate' : IDL.Int,
   });
+  const ClientVerificationStatus = IDL.Variant({
+    'verified' : IDL.Null,
+    'pending' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
   const ClientInfo = IDL.Record({
     'contract' : ContractDetails,
     'contactPerson' : IDL.Text,
@@ -204,25 +316,57 @@ export const idlFactory = ({ IDL }) => {
     'company' : IDL.Text,
     'address' : IDL.Text,
     'phone' : IDL.Text,
+    'verificationStatus' : ClientVerificationStatus,
   });
   const ContactInfo = IDL.Record({
     'name' : IDL.Text,
     'email' : IDL.Text,
     'message' : IDL.Text,
   });
+  const TransporterStatus = IDL.Record({
+    'timestamp' : IDL.Int,
+    'statusText' : IDL.Text,
+  });
+  const TransporterVerificationStatus = IDL.Variant({
+    'verified' : IDL.Null,
+    'pending' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
   const TransporterDetails = IDL.Record({
     'documents' : IDL.Vec(ExternalBlob),
     'contract' : ContractDetails,
     'contactPerson' : IDL.Text,
     'email' : IDL.Text,
+    'truckType' : TruckType,
     'company' : IDL.Text,
     'address' : IDL.Text,
     'phone' : IDL.Text,
+    'verificationStatus' : TransporterVerificationStatus,
   });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
     'role' : IDL.Text,
     'email' : IDL.Text,
+  });
+  const LocationEvidence = IDL.Record({
+    'transporterId' : IDL.Principal,
+    'screenshot' : ExternalBlob,
+    'location' : LiveLocation,
+    'uploadedAt' : IDL.Int,
+  });
+  const TruckTypeOption = IDL.Record({
+    'id' : IDL.Nat,
+    'name' : IDL.Text,
+    'truckType' : TruckType,
+  });
+  const ApprovalStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
+  const UserApprovalInfo = IDL.Record({
+    'status' : ApprovalStatus,
+    'principal' : IDL.Principal,
   });
   
   return IDL.Service({
@@ -253,6 +397,8 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addLocationEvidence' : IDL.Func([LiveLocation, ExternalBlob], [], []),
+    'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'approveLoad' : IDL.Func([IDL.Text, IDL.Bool], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignLoad' : IDL.Func([IDL.Text, IDL.Principal], [], []),
@@ -265,13 +411,33 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Principal, ContactInfo))],
         ['query'],
       ),
+    'getAllPendingLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+    'getAllTransporterStatuses' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterStatus))],
+        ['query'],
+      ),
     'getAllTransporters' : IDL.Func(
         [],
         [IDL.Vec(TransporterDetails)],
         ['query'],
       ),
+    'getAllTransportersWithLocations' : IDL.Func(
+        [],
+        [
+          IDL.Vec(
+            IDL.Tuple(IDL.Principal, TransporterDetails, IDL.Opt(LiveLocation))
+          ),
+        ],
+        ['query'],
+      ),
     'getAndroidApkLink' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getCallerClientInfo' : IDL.Func([], [IDL.Opt(ClientInfo)], ['query']),
+    'getCallerTransporterDetails' : IDL.Func(
+        [],
+        [IDL.Opt(TransporterDetails)],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClientInfo' : IDL.Func(
@@ -285,6 +451,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(TrackingUpdate)],
         ['query'],
       ),
+    'getLocationEvidence' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(LocationEvidence)],
+        ['query'],
+      ),
     'getTransporter' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(TransporterDetails)],
@@ -295,20 +466,43 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Load)],
         ['query'],
       ),
+    'getTransporterStatus' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(TransporterStatus)],
+        ['query'],
+      ),
+    'getTruckTypeOptions' : IDL.Func([], [IDL.Vec(TruckTypeOption)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'saveCallerClientInfo' : IDL.Func([ClientInfo], [], []),
+    'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+    'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+    'registerClient' : IDL.Func([ClientInfo], [], []),
+    'registerTransporter' : IDL.Func([TransporterDetails], [], []),
+    'requestApproval' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveContactInfo' : IDL.Func([ContactInfo], [], []),
-    'saveTransporterDetails' : IDL.Func([TransporterDetails], [], []),
     'setAndroidApkLink' : IDL.Func([IDL.Text], [], []),
+    'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
+    'setTransporterStatus' : IDL.Func([IDL.Text], [], []),
+    'updateCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateLoad' : IDL.Func([IDL.Text, Load], [], []),
     'updateLoadTracking' : IDL.Func([IDL.Text, TrackingUpdate], [], []),
+    'updateTransporterLocation' : IDL.Func([LiveLocation], [], []),
     'uploadTransporterDoc' : IDL.Func([ExternalBlob], [], []),
+    'verifyClient' : IDL.Func(
+        [IDL.Principal, ClientVerificationStatus],
+        [],
+        [],
+      ),
+    'verifyTransporter' : IDL.Func(
+        [IDL.Principal, TransporterVerificationStatus],
+        [],
+        [],
+      ),
   });
 };
 

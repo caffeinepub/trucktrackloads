@@ -1,95 +1,121 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Restore reliable /admin gate rendering and add visible error + retry states for hash-routed admin access",
+  "title": "Reliable password-admin session bootstrapping and admin routing (hash mode)",
   "requirements": [
     {
-      "id": "REQ-44",
-      "summary": "Make /admin always render a visible admin gate state (loading, sign-in prompt, denied) and never go blank by adding route-safe error handling around admin auth checks and dashboard rendering.",
+      "id": "REQ-1",
+      "summary": "Initialize password-admin sessions without requiring Internet Identity by creating an admin-capable actor and calling _initializeAccessControlWithSecret when caffeineAdminToken exists.",
       "acceptanceCriteria": [
-        "When visiting \"/#/admin\" while signed out, the page renders the AdminSignInPrompt UI (not a blank page).",
-        "When visiting \"/#/admin\" while signed in but not an admin, the page renders the AccessDeniedScreen UI (not a blank page).",
-        "When visiting \"/#/admin\" while signed in as an admin, the Admin Dashboard UI renders.",
-        "The admin route continues to exist at path \"/admin\" in TanStack Router (hash history), and the app remains hash-routed (no switch away from createHashHistory).",
-        "Any runtime error occurring in the admin page route (including during auth/role checks or initial admin dashboard render) is caught and replaced with a visible error state that includes a clear English message and a retry action (so users never see a completely blank admin page)."
+        "When \"caffeineAdminToken\" exists in sessionStorage and the user is not logged in with Internet Identity, visiting the admin route renders the Admin Dashboard (or a clear admin verification error state) rather than redirecting back to /admin/login indefinitely.",
+        "The actor initialization flow calls \"_initializeAccessControlWithSecret\" with the stored token for password-admin sessions (not only when Internet Identity is present)."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/hooks/useAdminToken.ts",
+          "operation": "create",
+          "description": "Create a small reactive hook that reads the current sessionStorage value for \"caffeineAdminToken\" and updates when it changes (via a custom window event dispatched by token set/clear)."
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Add/standardize admin-token helpers (e.g., hasPasswordAdminSession/getAdminToken/setAdminToken/clearAdminToken) and dispatch a custom \"caffeineAdminToken\" change event whenever the token is stored or cleared so the UI can react without refresh."
+        },
+        {
+          "path": "frontend/src/hooks/useAdminActor.ts",
+          "operation": "create",
+          "description": "Create a dedicated admin actor hook that always creates an anonymous actor and, when a caffeineAdminToken exists, calls backend \"_initializeAccessControlWithSecret\" with that token regardless of Internet Identity auth state. Use a React Query key that includes the token so the actor is recreated when the token changes. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update admin-relevant query hooks to use the admin-capable actor when operating under a password-admin token (no II). Ensure the isCallerAdmin query uses the actor that has been initialized with \"_initializeAccessControlWithSecret\" when caffeineAdminToken exists. Verify the component's usage instructions before implementing."
+        },
+        {
           "path": "frontend/src/pages/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Refactor the /admin page to always render the existing RequireAdmin gate, and wrap the admin dashboard content in a route-safe error boundary so any runtime error is replaced with a visible Admin error state and retry action."
+          "description": "Ensure the admin dashboard’s data queries execute against the admin-capable actor when running under a password-admin session, so the dashboard renders (or shows an explicit verification error state) without requiring Internet Identity. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Make admin verification reactive to password-admin token changes by incorporating the current caffeineAdminToken into actor/query keys and refetching checks when it updates.",
+      "acceptanceCriteria": [
+        "After a successful credential login (adminLogin), the admin token is stored and the next admin verification query uses the new token without requiring a page refresh.",
+        "After signing out (clearing \"caffeineAdminToken\"), admin verification queries no longer treat the user as admin and protected admin routes redirect to /admin/login."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAdminActor.ts",
+          "operation": "modify",
+          "description": "Ensure the React Query key used for the admin actor includes the current caffeineAdminToken so token changes force a new initialized actor and trigger dependent query invalidation/refetch. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update admin verification query keys (e.g., isCallerAdmin) to incorporate the current caffeineAdminToken (or a reactive token signal) so changing the token automatically re-runs verification with the updated token. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
+          "operation": "modify",
+          "description": "After adminLogin returns a token, store it using the centralized admin-token helper (so change events fire) and invalidate/refetch only the relevant admin verification queries/actor queries so the next verification uses the new token without relying on arbitrary timeouts or a full page refresh."
         },
         {
           "path": "frontend/src/components/auth/AdminRouteErrorState.tsx",
-          "operation": "create",
-          "description": "Add a dedicated, user-visible error state component for the /admin route with clear English messaging and a retry action (and optional sign-out/sign-in guidance) to prevent blank screens when the admin route throws."
+          "operation": "modify",
+          "description": "Ensure the sign-out action clears caffeineAdminToken via the centralized helper (so change events fire) and that admin verification queries are cleared/invalidated so RequireAdmin re-evaluates and redirects to /admin/login."
+        },
+        {
+          "path": "frontend/src/hooks/useAuth.ts",
+          "operation": "modify",
+          "description": "Make hasPasswordAdmin and admin-loading/admin-status computation rely on the reactive token helper so auth/admin state updates immediately when caffeineAdminToken is set/cleared."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Fix admin route guarding to avoid navigation during render and only redirect after token/auth evaluation to prevent loops and blank screens.",
+      "acceptanceCriteria": [
+        "Navigating to \"/admin\" with a valid \"caffeineAdminToken\" renders the admin dashboard content (not a blank screen).",
+        "Navigating to \"/admin\" without a token reliably redirects to \"/admin/login\".",
+        "No React warnings/errors occur due to navigation being triggered during render for admin route guarding."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/auth/RequireAdmin.tsx",
+          "operation": "modify",
+          "description": "Remove imperative navigate() calls executed during render. Implement redirect behavior using a post-render effect or TanStack Router’s declarative navigation, and ensure redirects to /admin/login occur only after token/auth/admin-check state has been evaluated (avoid redirect loops/blank screens). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-          "operation": "create",
-          "description": "Add a small error boundary wrapper used by the /admin page to catch render-time errors from the gate and/or dashboard and display AdminRouteErrorState with a retry mechanism."
-        },
+          "operation": "modify",
+          "description": "Align retry behavior with the updated actor/token model by invalidating/refetching admin verification queries (including isCallerAdmin) so the guard can recover without requiring a hard reload."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Ensure deployed routing uses consistent hash-based routing so post-login navigation to /admin resolves correctly in production builds.",
+      "acceptanceCriteria": [
+        "After a successful login on the admin login page, the app navigates to the admin dashboard and the route resolves correctly in the deployed build (no 404/blank screen).",
+        "Directly opening the admin dashboard URL in the deployed build works with the app’s configured routing mode (hash routing)."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/routeTree.tsx",
           "operation": "modify",
-          "description": "Ensure the /admin route at path \"/admin\" stays registered under TanStack Router and is wired to the updated AdminDashboardPage that contains the non-blank admin gate + error handling (keep hash routing behavior unchanged)."
+          "description": "Configure the TanStack Router instance to use hash history consistently (e.g., supply createHashHistory() to the router configuration) so /admin and /admin/login resolve correctly in deployed builds."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Verify the router continues to use createHashHistory and that no routing changes inadvertently break direct \"/#/admin\" navigation; adjust only if needed to preserve hash routing and improve resilience."
-        }
-      ]
-    },
-    {
-      "id": "REQ-45",
-      "summary": "Ensure all Admin entry points (TopNav and Footer) navigate to the hash-based /admin route reliably in production without relying on server rewrites.",
-      "acceptanceCriteria": [
-        "Clicking the \"Admin\" link in the top navigation always navigates to the admin route and displays the admin gate UI.",
-        "The Footer \"Admin\" quick link continues to point to the hash route format \"/#/admin\" and successfully loads the admin gate UI.",
-        "Directly entering the URL with hash format \"/#/admin\" loads the admin gate UI without requiring any additional navigation steps."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/layout/TopNav.tsx",
-          "operation": "modify",
-          "description": "Audit and harden the TopNav Admin navigation to ensure it always routes via TanStack Router to \"/admin\" (hash history) and never results in a non-rendering admin screen."
+          "description": "Remove any unused/duplicate hash-history setup and ensure RouterProvider uses the router configured for hash routing, keeping production navigation consistent after login."
         },
         {
-          "path": "frontend/src/components/layout/Footer.tsx",
+          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
           "operation": "modify",
-          "description": "Verify the Footer Admin quick link remains in hash format \"/#/admin\" and continues to work in production builds; adjust link implementation only if needed to guarantee consistent navigation."
-        },
-        {
-          "path": "frontend/src/components/auth/AdminSignInPrompt.tsx",
-          "operation": "modify",
-          "description": "Confirm the post-login redirect behavior reliably returns users to the hash-routed \"/admin\" view and triggers the admin gate UI (loading/sign-in/denied/dashboard) without requiring extra navigation steps."
-        }
-      ]
-    },
-    {
-      "id": "REQ-46",
-      "summary": "Replace indefinite 'Verifying access...' behavior with a clear error + retry state when admin auth/role/profile checks fail (e.g., backend unreachable), while preserving normal loading/unauth/denied behavior.",
-      "acceptanceCriteria": [
-        "If role/profile verification cannot complete due to an error, /admin shows a non-blocking error state (English text) with a retry action.",
-        "The loading state on /admin does not persist forever without any user feedback; the UI provides an actionable next step (retry and/or sign out/sign in again).",
-        "Existing three-state behavior (loading, unauthenticated prompt, authenticated non-admin denied) remains intact for normal successful cases."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useAuth.ts",
-          "operation": "modify",
-          "description": "Extend useAuth to surface role/profile query failure signals (error state) and expose a retry/refetch capability so the /admin gate can present actionable troubleshooting instead of spinning indefinitely."
-        },
-        {
-          "path": "frontend/src/components/auth/RequireAdmin.tsx",
-          "operation": "modify",
-          "description": "Update the RequireAdmin gate to detect auth/role/profile verification failures and render a clear English error state with a retry action (and optional sign-out/sign-in guidance), while keeping the existing loading, unauthenticated prompt, and access denied behaviors for successful cases."
-        },
-        {
-          "path": "frontend/src/components/auth/AdminRouteErrorState.tsx",
-          "operation": "modify",
-          "description": "Enhance the /admin error UI to support retrying role/profile verification (not just render-time errors) and to provide clear next steps when the backend is unreachable or verification fails."
+          "description": "Confirm post-login navigation targets the configured admin dashboard route in hash routing mode and does not rely on behavior that differs between dev server and production hosting."
         }
       ]
     }

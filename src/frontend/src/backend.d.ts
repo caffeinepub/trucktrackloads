@@ -19,20 +19,56 @@ export interface Load {
     client: Principal;
     isApproved: boolean;
     description: string;
+    truckType: TruckType;
     loadingLocation: string;
     tracking?: TrackingUpdate;
     assignedTransporter?: Principal;
     confirmation: LoadConfirmation;
     offloadingLocation: string;
 }
-export interface TransporterDetails {
-    documents: Array<ExternalBlob>;
+export interface LiveLocation {
+    latitude: number;
+    longitude: number;
+    timestamp: bigint;
+    locationName: string;
+}
+export interface ClientInfo {
     contract: ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
     address: string;
     phone: string;
+    verificationStatus: ClientVerificationStatus;
+}
+export interface TruckTypeOption {
+    id: bigint;
+    name: string;
+    truckType: TruckType;
+}
+export interface ContractDetails {
+    endDate: bigint;
+    contractText: string;
+    startDate: bigint;
+}
+export interface TransporterStatus {
+    timestamp: bigint;
+    statusText: string;
+}
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
+}
+export interface TransporterDetails {
+    documents: Array<ExternalBlob>;
+    contract: ContractDetails;
+    contactPerson: string;
+    email: string;
+    truckType: TruckType;
+    company: string;
+    address: string;
+    phone: string;
+    verificationStatus: TransporterVerificationStatus;
 }
 export interface TrackingUpdate {
     status: string;
@@ -43,18 +79,11 @@ export interface LoadConfirmation {
     orderId: string;
     confirmationFiles: Array<ExternalBlob>;
 }
-export interface ContractDetails {
-    endDate: bigint;
-    contractText: string;
-    startDate: bigint;
-}
-export interface ClientInfo {
-    contract: ContractDetails;
-    contactPerson: string;
-    email: string;
-    company: string;
-    address: string;
-    phone: string;
+export interface LocationEvidence {
+    transporterId: Principal;
+    screenshot: ExternalBlob;
+    location: LiveLocation;
+    uploadedAt: bigint;
 }
 export interface ContactInfo {
     name: string;
@@ -66,12 +95,29 @@ export interface UserProfile {
     role: string;
     email: string;
 }
+export enum ApprovalStatus {
+    pending = "pending",
+    approved = "approved",
+    rejected = "rejected"
+}
+export enum ClientVerificationStatus {
+    verified = "verified",
+    pending = "pending",
+    rejected = "rejected"
+}
+export enum TruckType {
+    triaxle = "triaxle",
+    superlinkFlatdeck = "superlinkFlatdeck",
+    sideTipper = "sideTipper"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
     guest = "guest"
 }
 export interface backendInterface {
+    addLocationEvidence(location: LiveLocation, screenshot: ExternalBlob): Promise<void>;
+    adminLogin(username: string, password: string): Promise<string>;
     approveLoad(loadId: string, isApproved: boolean): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignLoad(loadId: string, transporterId: Principal): Promise<void>;
@@ -80,24 +126,40 @@ export interface backendInterface {
     getAllApprovedLoads(): Promise<Array<Load>>;
     getAllClients(): Promise<Array<ClientInfo>>;
     getAllContactMessages(): Promise<Array<[Principal, ContactInfo]>>;
+    getAllPendingLoads(): Promise<Array<Load>>;
+    getAllTransporterStatuses(): Promise<Array<[Principal, TransporterStatus]>>;
     getAllTransporters(): Promise<Array<TransporterDetails>>;
+    getAllTransportersWithLocations(): Promise<Array<[Principal, TransporterDetails, LiveLocation | null]>>;
     getAndroidApkLink(): Promise<string | null>;
     getCallerClientInfo(): Promise<ClientInfo | null>;
+    getCallerTransporterDetails(): Promise<TransporterDetails | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClientInfo(client: Principal): Promise<ClientInfo | null>;
     getClientLoads(client: Principal): Promise<Array<Load>>;
     getLoadTracking(loadId: string): Promise<TrackingUpdate | null>;
+    getLocationEvidence(transporterId: Principal): Promise<Array<LocationEvidence>>;
     getTransporter(transporter: Principal): Promise<TransporterDetails | null>;
     getTransporterLoads(transporter: Principal): Promise<Array<Load>>;
+    getTransporterStatus(transporterId: Principal): Promise<TransporterStatus | null>;
+    getTruckTypeOptions(): Promise<Array<TruckTypeOption>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    saveCallerClientInfo(clientInfo: ClientInfo): Promise<void>;
+    isCallerApproved(): Promise<boolean>;
+    listApprovals(): Promise<Array<UserApprovalInfo>>;
+    registerClient(clientInfo: ClientInfo): Promise<void>;
+    registerTransporter(details: TransporterDetails): Promise<void>;
+    requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveContactInfo(contact: ContactInfo): Promise<void>;
-    saveTransporterDetails(details: TransporterDetails): Promise<void>;
     setAndroidApkLink(link: string): Promise<void>;
+    setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
+    setTransporterStatus(statusText: string): Promise<void>;
+    updateCredentials(username: string, password: string): Promise<void>;
     updateLoad(loadId: string, load: Load): Promise<void>;
     updateLoadTracking(loadId: string, update: TrackingUpdate): Promise<void>;
+    updateTransporterLocation(location: LiveLocation): Promise<void>;
     uploadTransporterDoc(blob: ExternalBlob): Promise<void>;
+    verifyClient(client: Principal, status: ClientVerificationStatus): Promise<void>;
+    verifyTransporter(transporter: Principal, status: TransporterVerificationStatus): Promise<void>;
 }

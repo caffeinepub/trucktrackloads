@@ -1,9 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { ContactInfo, ClientInfo, TransporterDetails, Load, TrackingUpdate } from '../backend';
+import { useAdminToken } from './useAdminToken';
+import type { ContactInfo, ClientInfo, TransporterDetails, Load, TrackingUpdate, ClientVerificationStatus, TruckTypeOption, LiveLocation, LocationEvidence, TransporterStatus } from '../backend';
 import { ExternalBlob } from '../backend';
 import { Principal } from '@dfinity/principal';
+
+// TransporterVerificationStatus has the same shape as ClientVerificationStatus
+type TransporterVerificationStatus = ClientVerificationStatus;
 
 // Contact Messages
 export function useSaveContactInfo() {
@@ -30,6 +34,26 @@ export function useGetAllContactMessages() {
   });
 }
 
+// Admin verification
+export function useIsCallerAdmin() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  const adminToken = useAdminToken();
+
+  return useQuery<boolean>({
+    queryKey: ['isCallerAdmin', adminToken],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.isCallerAdmin();
+    },
+    // Enable if actor is ready and either:
+    // - User is authenticated with II, OR
+    // - Password admin session exists
+    enabled: !!actor && !actorFetching && (!!identity || !!adminToken),
+    retry: false,
+  });
+}
+
 // Client Info
 export function useGetCallerClientInfo() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -44,14 +68,30 @@ export function useGetCallerClientInfo() {
   });
 }
 
-export function useSaveCallerClientInfo() {
+export function useRegisterClient() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (clientInfo: ClientInfo) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerClientInfo(clientInfo);
+      return actor.registerClient(clientInfo);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
+      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+    },
+  });
+}
+
+export function useVerifyClient() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ client, status }: { client: Principal; status: ClientVerificationStatus }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.verifyClient(client, status);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
@@ -76,32 +116,47 @@ export function useGetAllClients() {
 // Transporter
 export function useGetCallerTransporterDetails() {
   const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
 
   return useQuery<TransporterDetails | null>({
     queryKey: ['currentTransporterDetails'],
     queryFn: async () => {
-      if (!actor || !identity) return null;
-      const principal = identity.getPrincipal();
-      return actor.getTransporter(principal);
+      if (!actor) return null;
+      return actor.getCallerTransporterDetails();
     },
-    enabled: !!actor && !actorFetching && !!identity,
+    enabled: !!actor && !actorFetching,
     retry: false,
   });
 }
 
-export function useSaveTransporterDetails() {
+export function useRegisterTransporter() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (details: TransporterDetails) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveTransporterDetails(details);
+      return actor.registerTransporter(details);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transporters'] });
       queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
+    },
+  });
+}
+
+export function useVerifyTransporter() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transporter, status }: { transporter: Principal; status: TransporterVerificationStatus }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.verifyTransporter(transporter, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
+      queryClient.invalidateQueries({ queryKey: ['transporters'] });
+      queryClient.invalidateQueries({ queryKey: ['transportersWithLocations'] });
     },
   });
 }
@@ -116,6 +171,107 @@ export function useGetAllTransporters() {
       return actor.getAllTransporters();
     },
     enabled: !!actor && !actorFetching,
+  });
+}
+
+// Transporter Live Location
+export function useUpdateTransporterLocation() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (location: LiveLocation) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateTransporterLocation(location);
+    },
+  });
+}
+
+export function useGetAllTransportersWithLocations() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[Principal, TransporterDetails, LiveLocation | null]>>({
+    queryKey: ['transportersWithLocations'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllTransportersWithLocations();
+    },
+    enabled: !!actor && !actorFetching,
+    refetchInterval: 30000, // Refetch every 30 seconds for live updates
+  });
+}
+
+// Location Evidence
+export function useAddLocationEvidence() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ location, screenshot }: { location: LiveLocation; screenshot: ExternalBlob }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addLocationEvidence(location, screenshot);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locationEvidence'] });
+    },
+  });
+}
+
+export function useGetLocationEvidence(transporterId: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<LocationEvidence[]>({
+    queryKey: ['locationEvidence', transporterId?.toString()],
+    queryFn: async () => {
+      if (!actor || !transporterId) throw new Error('Actor or transporter ID not available');
+      return actor.getLocationEvidence(transporterId);
+    },
+    enabled: !!actor && !actorFetching && !!transporterId,
+  });
+}
+
+// Transporter Status
+export function useGetCallerTransporterStatus() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<TransporterStatus | null>({
+    queryKey: ['callerTransporterStatus'],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      return actor.getTransporterStatus(identity.getPrincipal());
+    },
+    enabled: !!actor && !actorFetching && !!identity,
+    retry: false,
+  });
+}
+
+export function useSetTransporterStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (statusText: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.setTransporterStatus(statusText);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callerTransporterStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransporterStatuses'] });
+    },
+  });
+}
+
+export function useGetAllTransporterStatuses() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[Principal, TransporterStatus]>>({
+    queryKey: ['allTransporterStatuses'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllTransporterStatuses();
+    },
+    enabled: !!actor && !actorFetching,
+    refetchInterval: 30000, // Refetch every 30 seconds for updates
   });
 }
 
@@ -148,6 +304,20 @@ export function useSetAndroidApkLink() {
   });
 }
 
+// Truck Types
+export function useGetTruckTypeOptions() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<TruckTypeOption[]>({
+    queryKey: ['truckTypeOptions'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getTruckTypeOptions();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
 // Loads
 export function useCreateLoad() {
   const { actor } = useActor();
@@ -160,6 +330,9 @@ export function useCreateLoad() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loads'] });
+      queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
     },
   });
 }
@@ -190,6 +363,19 @@ export function useGetAllApprovedLoads() {
   });
 }
 
+export function useGetAllPendingLoads() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['pendingLoads'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllPendingLoads();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
 export function useApproveLoad() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -202,6 +388,7 @@ export function useApproveLoad() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loads'] });
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
     },
   });

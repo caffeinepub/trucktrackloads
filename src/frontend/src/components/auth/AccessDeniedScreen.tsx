@@ -1,8 +1,14 @@
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 export default function AccessDeniedScreen() {
+  const navigate = useNavigate();
+
+  const handlePasswordLogin = () => {
+    navigate({ to: '/admin/login' });
+  };
+
   return (
     <div className="container flex items-center justify-center min-h-[60vh] py-12">
       <div className="text-center max-w-md">
@@ -13,13 +19,18 @@ export default function AccessDeniedScreen() {
         </p>
         <p className="text-sm text-muted-foreground mb-8">
           If you believe you should have admin access, please contact support at{' '}
-          <a href="mailto:moleleholdings101@gmail.com" className="text-primary hover:underline">
+          <a href="mailto:moleleholdings101@gmail.com" className="text-primary hover:underline font-medium">
             moleleholdings101@gmail.com
           </a>
         </p>
-        <Button asChild>
-          <Link to="/">Return to Home</Link>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button asChild variant="default">
+            <Link to="/">Return to Home</Link>
+          </Button>
+          <Button onClick={handlePasswordLogin} variant="outline">
+            Admin Login
+          </Button>
+        </div>
       </div>
     </div>
   );

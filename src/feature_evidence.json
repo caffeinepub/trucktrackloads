@@ -2,12 +2,59 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-admin-page-rendering-so-navigating-to-the-admin-route-reliably-shows-the-admin-access-gate-ui-loading-sign-in-prompt-or-access-denied-instead-of-a-blank-non-rendering-screen",
-      "featureTitle": "Fix the Admin page rendering so navigating to the admin route reliably shows the admin access gate UI (loading, sign-in prompt, or access denied) instead of a blank/non-rendering screen.",
+      "featureId": "feature-fix-the-password-based-admin-session-initialization-so-that-the-admin-dashboard-can-be-opened-even-when-the-user-is-not-authenticated-with-internet-identity-when-a-sessionstorage-key-caffeineadmintoken-exists-the-frontend-must-create-an-actor-and-call-backend-initializeaccesscontrolwithsecret-with-that-token-regardless-of-internet-identity-auth-state",
+      "featureTitle": "Fix the password-based admin session initialization so that the admin dashboard can be opened even when the user is not authenticated with Internet Identity: when a sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token, regardless of Internet Identity auth state.",
+      "files": [
+        "frontend/src/hooks/useAdminToken.ts",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/utils/urlParams.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-the-frontend-recreates-refetches-the-actor-and-all-admin-verification-queries-when-the-password-admin-token-changes-the-actor-query-key-must-incorporate-the-current-caffeineadmintoken-value-or-an-equivalent-reactive-signal-and-token-updates-triggered-by-storing-clearing-the-token-must-cause-admin-checks-e-g-iscalleradmin-to-re-run-with-the-updated-token",
+      "featureTitle": "Ensure the frontend recreates/refetches the actor and all admin-verification queries when the password-admin token changes: the actor query key must incorporate the current \"caffeineAdminToken\" value (or an equivalent reactive signal), and token updates triggered by storing/clearing the token must cause admin checks (e.g., isCallerAdmin) to re-run with the updated token.",
+      "files": [
+        "frontend/src/components/auth/AdminRouteErrorState.tsx",
+        "frontend/src/hooks/useAuth.ts",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-admin-route-navigation-guard-behavior-so-it-does-not-block-or-fail-to-render-the-admin-dashboard-remove-any-imperative-navigation-calls-performed-during-render-in-the-admin-guard-and-ensure-redirects-to-admin-login-only-occur-after-the-token-auth-state-has-been-evaluated-to-avoid-redirect-loops-or-blank-screens",
+      "featureTitle": "Fix admin-route navigation/guard behavior so it does not block or fail to render the admin dashboard: remove any imperative navigation calls performed during render in the admin guard and ensure redirects to \"/admin/login\" only occur after the token/auth state has been evaluated (to avoid redirect loops or blank screens).",
       "files": [
         "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-        "frontend/src/components/auth/AdminRouteErrorState.tsx",
-        "frontend/src/pages/AdminDashboardPage.tsx"
+        "frontend/src/components/auth/RequireAdmin.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,18 +63,21 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-44"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-primary-navigation-path-to-admin-works-consistently-in-production-by-verifying-that-the-header-admin-link-and-any-other-admin-entry-points-navigate-correctly-in-hash-based-routing-and-do-not-depend-on-server-side-rewrites",
-      "featureTitle": "Ensure the primary navigation path to Admin works consistently in production by verifying that the header Admin link and any other Admin entry points navigate correctly in hash-based routing and do not depend on server-side rewrites.",
+      "featureId": "feature-fix-routing-configuration-so-that-post-login-navigation-to-the-admin-dashboard-works-in-the-deployed-environment-the-router-must-consistently-use-the-intended-history-mode-hash-based-routing-so-that-navigating-to-admin-from-the-login-page-actually-loads-the-admin-route-in-production-builds",
+      "featureTitle": "Fix routing configuration so that post-login navigation to the admin dashboard works in the deployed environment: the router must consistently use the intended history mode (hash-based routing) so that navigating to \"/admin\" from the login page actually loads the admin route in production builds.",
       "files": [
-        "frontend/src/components/auth/AdminSignInPrompt.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/pages/AdminPasswordLoginPage.tsx",
+        "frontend/src/routeTree.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -36,32 +86,11 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-45"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-improve-the-admin-gate-troubleshooting-experience-when-auth-or-role-profile-queries-fail-e-g-backend-unreachable-by-displaying-a-clear-english-error-message-and-a-retry-option-on-the-admin-gate-instead-of-staying-indefinitely-on-verifying-access",
-      "featureTitle": "Improve the admin gate troubleshooting experience when auth or role/profile queries fail (e.g., backend unreachable) by displaying a clear English error message and a retry option on the /admin gate instead of staying indefinitely on \"Verifying access...\".",
-      "files": [
-        "frontend/src/components/auth/AdminRouteErrorState.tsx",
-        "frontend/src/components/auth/RequireAdmin.tsx",
-        "frontend/src/hooks/useAuth.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-46"
+        "REQ-4"
       ],
       "confidence": "high"
     }

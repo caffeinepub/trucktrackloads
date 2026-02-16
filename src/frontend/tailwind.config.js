@@ -63,12 +63,14 @@ export default {
                 sm: 'calc(var(--radius) - 4px)'
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
-                display: ['Inter', 'system-ui', 'sans-serif']
+                sans: ['"IBM Plex Sans"', 'Inter', 'system-ui', 'sans-serif'],
+                display: ['"IBM Plex Sans"', 'Inter', 'system-ui', 'sans-serif'],
+                mono: ['"IBM Plex Mono"', 'Consolas', 'monospace']
             },
             boxShadow: {
-                xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
-                soft: '0 2px 8px -2px rgba(0,0,0,0.1)'
+                xs: '0 1px 2px 0 rgba(0,0,0,0.04)',
+                soft: '0 2px 6px -1px rgba(0,0,0,0.08)',
+                card: '0 1px 3px 0 rgba(0,0,0,0.06)'
             },
             keyframes: {
                 'accordion-down': {

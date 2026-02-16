@@ -47,30 +47,30 @@ export default function HomePage() {
             alt="TruckTrackAfrica - Freight Forwarding"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/98 via-background/90 to-background/70" />
         </div>
-        <div className="container relative py-24 md:py-32">
+        <div className="container relative py-20 md:py-28">
           <div className="max-w-2xl">
             <div className="mb-6">
               <img
                 src="/assets/generated/trucktrack-africa-logo.dim_512x512.png"
                 alt="TruckTrackAfrica Logo"
-                className="h-20 w-auto"
+                className="h-16 w-auto"
               />
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
               Connecting Africa's Freight Network
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               Professional freight forwarding and logistics solutions across Southern Africa. Connect clients with
               trusted transporters for efficient, reliable cargo delivery.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button asChild size="lg" className="text-lg">
-                <Link to="/client-registration">Post a Load</Link>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button asChild size="lg">
+                <Link to="/register/client">Post a Load</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="text-lg">
-                <Link to="/transporter-registration">Register as Transporter</Link>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/register/transporter">Register as Transporter</Link>
               </Button>
             </div>
           </div>
@@ -78,59 +78,59 @@ export default function HomePage() {
       </section>
 
       {/* About Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted/20">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">About Molele & Co PTY LTD</h2>
-            <p className="text-lg text-muted-foreground">
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4">About Molele & Co PTY LTD</h2>
+            <p className="text-base text-muted-foreground leading-relaxed">
               With years of experience in logistics and transportation, we specialize in connecting businesses with
               reliable freight solutions across Southern Africa. Our platform ensures secure, efficient, and transparent
               cargo movement.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <Card className="shadow-card">
               <CardHeader>
-                <Truck className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Reliable Network</CardTitle>
+                <Truck className="h-9 w-9 text-primary mb-2" />
+                <CardTitle className="text-lg">Reliable Network</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Vetted transporters with verified documentation and insurance coverage
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-card">
               <CardHeader>
-                <MapPin className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Wide Coverage</CardTitle>
+                <MapPin className="h-9 w-9 text-primary mb-2" />
+                <CardTitle className="text-lg">Wide Coverage</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Operating across South Africa, Zimbabwe, Zambia, Botswana, Namibia, and Tanzania
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-card">
               <CardHeader>
-                <Shield className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Secure Platform</CardTitle>
+                <Shield className="h-9 w-9 text-primary mb-2" />
+                <CardTitle className="text-lg">Secure Platform</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>Admin-approved loads and verified user profiles for your peace of mind</CardDescription>
+                <CardDescription className="text-sm">Admin-approved loads and verified user profiles for your peace of mind</CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-card">
               <CardHeader>
-                <Users className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Expert Support</CardTitle>
+                <Users className="h-9 w-9 text-primary mb-2" />
+                <CardTitle className="text-lg">Expert Support</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>Dedicated team to assist with your freight forwarding needs</CardDescription>
+                <CardDescription className="text-sm">Dedicated team to assist with your freight forwarding needs</CardDescription>
               </CardContent>
             </Card>
           </div>
@@ -141,26 +141,26 @@ export default function HomePage() {
       <section className="py-16">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Clients Say</h2>
-            <p className="text-lg text-muted-foreground">Trusted by businesses across Southern Africa</p>
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4">What Our Clients Say</h2>
+            <p className="text-base text-muted-foreground">Trusted by businesses across Southern Africa</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {testimonials.map((testimonial, index) => (
-              <Card key={index}>
+              <Card key={index} className="shadow-card">
                 <CardHeader>
                   <div className="flex gap-1 mb-2">
                     {Array.from({ length: testimonial.rating }).map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                     ))}
                   </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-base">{testimonial.name}</CardTitle>
+                  <CardDescription className="text-sm">
                     {testimonial.role} at {testimonial.company}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{testimonial.content}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{testimonial.content}</p>
                 </CardContent>
               </Card>
             ))}
@@ -171,9 +171,9 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-16 bg-primary text-primary-foreground">
         <div className="container text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-lg mb-8 opacity-90">Join our network of clients and transporters today</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <h2 className="text-3xl md:text-4xl font-semibold mb-4">Ready to Get Started?</h2>
+          <p className="text-base mb-8 opacity-90">Join our network of clients and transporters today</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg" variant="secondary">
               <Link to="/load-board">View Load Board</Link>
             </Button>
