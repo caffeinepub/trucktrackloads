@@ -12,7 +12,8 @@ export function useGetCallerUserProfile() {
       return actor.getCallerUserProfile();
     },
     enabled: !!actor && !actorFetching,
-    retry: false,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   return {
@@ -32,7 +33,8 @@ export function useGetCallerUserRole() {
       return actor.getCallerUserRole();
     },
     enabled: !!actor && !actorFetching,
-    retry: false,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Return custom state that properly reflects actor dependency

@@ -1,130 +1,95 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin spreadsheet listings (clients/transporters + contract), APK link management, DRC coverage, and tonnage units",
+  "title": "Restore reliable /admin gate rendering and add visible error + retry states for hash-routed admin access",
   "requirements": [
     {
-      "id": "REQ-38",
-      "summary": "Add “Democratic Republic of Congo” to all public coverage/countries lists (About, Services, Footer) without altering existing layout/styling or other country names.",
+      "id": "REQ-44",
+      "summary": "Make /admin always render a visible admin gate state (loading, sign-in prompt, denied) and never go blank by adding route-safe error handling around admin auth checks and dashboard rendering.",
       "acceptanceCriteria": [
-        "About page regional coverage list includes “Democratic Republic of Congo”.",
-        "Services page “Coverage Areas” list includes “Democratic Republic of Congo”.",
-        "Footer “Coverage Areas” line includes “Democratic Republic of Congo”.",
-        "No other country names are removed or renamed."
+        "When visiting \"/#/admin\" while signed out, the page renders the AdminSignInPrompt UI (not a blank page).",
+        "When visiting \"/#/admin\" while signed in but not an admin, the page renders the AccessDeniedScreen UI (not a blank page).",
+        "When visiting \"/#/admin\" while signed in as an admin, the Admin Dashboard UI renders.",
+        "The admin route continues to exist at path \"/admin\" in TanStack Router (hash history), and the app remains hash-routed (no switch away from createHashHistory).",
+        "Any runtime error occurring in the admin page route (including during auth/role checks or initial admin dashboard render) is caught and replaced with a visible error state that includes a clear English message and a retry action (so users never see a completely blank admin page)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AboutPage.tsx",
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Insert “Democratic Republic of Congo” into the existing Regional Coverage list, keeping the same markup, ordering style, and visual treatment."
+          "description": "Refactor the /admin page to always render the existing RequireAdmin gate, and wrap the admin dashboard content in a route-safe error boundary so any runtime error is replaced with a visible Admin error state and retry action."
         },
         {
-          "path": "frontend/src/pages/ServicesPage.tsx",
+          "path": "frontend/src/components/auth/AdminRouteErrorState.tsx",
+          "operation": "create",
+          "description": "Add a dedicated, user-visible error state component for the /admin route with clear English messaging and a retry action (and optional sign-out/sign-in guidance) to prevent blank screens when the admin route throws."
+        },
+        {
+          "path": "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
+          "operation": "create",
+          "description": "Add a small error boundary wrapper used by the /admin page to catch render-time errors from the gate and/or dashboard and display AdminRouteErrorState with a retry mechanism."
+        },
+        {
+          "path": "frontend/src/routeTree.tsx",
           "operation": "modify",
-          "description": "Add “Democratic Republic of Congo” to the Coverage Areas countries array/list while keeping the existing grid layout and styling consistent."
+          "description": "Ensure the /admin route at path \"/admin\" stays registered under TanStack Router and is wired to the updated AdminDashboardPage that contains the non-blank admin gate + error handling (keep hash routing behavior unchanged)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Verify the router continues to use createHashHistory and that no routing changes inadvertently break direct \"/#/admin\" navigation; adjust only if needed to preserve hash routing and improve resilience."
+        }
+      ]
+    },
+    {
+      "id": "REQ-45",
+      "summary": "Ensure all Admin entry points (TopNav and Footer) navigate to the hash-based /admin route reliably in production without relying on server rewrites.",
+      "acceptanceCriteria": [
+        "Clicking the \"Admin\" link in the top navigation always navigates to the admin route and displays the admin gate UI.",
+        "The Footer \"Admin\" quick link continues to point to the hash route format \"/#/admin\" and successfully loads the admin gate UI.",
+        "Directly entering the URL with hash format \"/#/admin\" loads the admin gate UI without requiring any additional navigation steps."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/layout/TopNav.tsx",
+          "operation": "modify",
+          "description": "Audit and harden the TopNav Admin navigation to ensure it always routes via TanStack Router to \"/admin\" (hash history) and never results in a non-rendering admin screen."
         },
         {
           "path": "frontend/src/components/layout/Footer.tsx",
           "operation": "modify",
-          "description": "Append “Democratic Republic of Congo” to the Footer Coverage Areas text without renaming or removing existing countries."
+          "description": "Verify the Footer Admin quick link remains in hash format \"/#/admin\" and continues to work in production builds; adjust link implementation only if needed to guarantee consistent navigation."
+        },
+        {
+          "path": "frontend/src/components/auth/AdminSignInPrompt.tsx",
+          "operation": "modify",
+          "description": "Confirm the post-login redirect behavior reliably returns users to the hash-routed \"/admin\" view and triggers the admin gate UI (loading/sign-in/denied/dashboard) without requiring extra navigation steps."
         }
       ]
     },
     {
-      "id": "REQ-40",
-      "summary": "Capture and persist “Contract Details” in Client and Transporter registration flows and rehydrate it when revisiting the forms.",
+      "id": "REQ-46",
+      "summary": "Replace indefinite 'Verifying access...' behavior with a clear error + retry state when admin auth/role/profile checks fail (e.g., backend unreachable), while preserving normal loading/unauth/denied behavior.",
       "acceptanceCriteria": [
-        "Client Registration page includes a “Contract Details” input (appropriate multi-line control) and saves it with the rest of the client profile.",
-        "Transporter Registration page includes a “Contract Details” input (appropriate multi-line control) and saves it with the rest of the transporter profile.",
-        "Existing validation for required fields and transporter required documents remains intact.",
-        "Revisiting the registration pages shows the previously saved contract details (where applicable)."
+        "If role/profile verification cannot complete due to an error, /admin shows a non-blocking error state (English text) with a retry action.",
+        "The loading state on /admin does not persist forever without any user feedback; the UI provides an actionable next step (retry and/or sign out/sign in again).",
+        "Existing three-state behavior (loading, unauthenticated prompt, authenticated non-admin denied) remains intact for normal successful cases."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/hooks/useAuth.ts",
           "operation": "modify",
-          "description": "Extend existing query/mutation hooks to support reading and saving contract details for ClientInfo and TransporterDetails using the already-available backend actor methods; ensure cache invalidation so revisiting pages rehydrates saved contract details."
+          "description": "Extend useAuth to surface role/profile query failure signals (error state) and expose a retry/refetch capability so the /admin gate can present actionable troubleshooting instead of spinning indefinitely."
         },
         {
-          "path": "frontend/src/pages/ClientRegistrationPage.tsx",
+          "path": "frontend/src/components/auth/RequireAdmin.tsx",
           "operation": "modify",
-          "description": "Add a multi-line “Contract Details” field (English label) and include it in the payload saved with the client profile; prefill the field from existing saved client info when present; keep existing required-field validation unchanged."
+          "description": "Update the RequireAdmin gate to detect auth/role/profile verification failures and render a clear English error state with a retry action (and optional sign-out/sign-in guidance), while keeping the existing loading, unauthenticated prompt, and access denied behaviors for successful cases."
         },
         {
-          "path": "frontend/src/pages/TransporterRegistrationPage.tsx",
+          "path": "frontend/src/components/auth/AdminRouteErrorState.tsx",
           "operation": "modify",
-          "description": "Add a multi-line “Contract Details” field (English label) and persist it with transporter details; load previously saved transporter details for the current caller to prefill the form on revisit; keep existing required documents and validation intact. Use the selected blob-storage component’s ExternalBlob patterns already in use for document uploads (Verify the component's usage instructions before implementing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-41",
-      "summary": "Add spreadsheet-style admin tables for Clients and Transporters (including Contract Details) with CSV export and proper loading/empty states.",
-      "acceptanceCriteria": [
-        "Admin Dashboard includes a Clients section/tab that displays all clients in a table with clear column headers (including Contract Details).",
-        "Admin Dashboard Transporters section is updated from card list to a table (or adds a table view) that includes Contract Details and existing transporter fields.",
-        "Each table includes an “Export CSV” (or equivalent) action that downloads a CSV file containing the rows currently shown.",
-        "The admin tables load using admin-only backend APIs and show a loading state and an empty state when there is no data."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/csv.ts",
-          "operation": "create",
-          "description": "Add a small CSV utility to convert table row data to CSV and trigger a browser download with a sensible filename (clients/transporters)."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add/extend admin-only data hooks to fetch all clients and all transporters for table views, reusing the existing actor calls and React Query patterns."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Update the Admin Dashboard UI to include: (1) a Clients tab/section rendering a spreadsheet-style table with column headers including Contract Details; (2) update the Transporters tab from cards to a table including Contract Details and existing fields; (3) add Export CSV actions for each table using the new csv utility; (4) include loading and empty states. Keep admin access guarded via the existing RequireAdmin flow that follows the selected authorization component’s role-based access control approach (Verify the component's usage instructions before implementing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-42",
-      "summary": "Display and manage an admin-configurable Android APK download link on the Admin Dashboard.",
-      "acceptanceCriteria": [
-        "Backend provides admin-only methods to get and set the APK download URL (stored persistently in canister state).",
-        "Admin Dashboard displays a clearly labeled “APK Download” section with a clickable link when a URL is configured.",
-        "Admin Dashboard provides an admin-only UI control to set/update the APK download URL and save it successfully.",
-        "If the APK URL is not configured, Admin Dashboard shows an English empty-state message indicating no APK link is set yet."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add hooks for fetching and updating the Android APK link using the existing backend actor methods; ensure React Query cache updates after saving so the Admin Dashboard reflects the latest link."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Add a prominent “APK Download” section to the Admin Dashboard: show a clickable link when configured, an English empty state when missing, and an input + save action for admins. Keep access within the existing RequireAdmin guard aligned to the selected authorization component (Verify the component's usage instructions before implementing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-43",
-      "summary": "Standardize weight entry and display to tons/tonnage (not kilograms) across Load Board and Admin Dashboard while preserving numeric/positive validation.",
-      "acceptanceCriteria": [
-        "Load Board “Post a Load” form weight label and placeholder reference tons/tonnage (not kg).",
-        "Approved loads list and “My Loads” list display weight in tons/tonnage (not kg).",
-        "Admin Dashboard load cards display weight in tons/tonnage (not kg).",
-        "Validation still prevents non-numeric or non-positive weights."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/LoadBoardPage.tsx",
-          "operation": "modify",
-          "description": "Update the Post a Load weight label/placeholder/help text to tons/tonnage and update all rendered weight units in Browse Loads and My Loads lists to show tons; keep existing numeric/positive validation logic intact. Use existing blob upload approach for confirmation files (Verify the selected blob-storage component usage instructions before implementing)."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Update Admin Dashboard load cards to display weight in tons/tonnage instead of kg, without changing load approval behavior or layout structure."
+          "description": "Enhance the /admin error UI to support retrying role/profile verification (not just render-time errors) and to provide clear next steps when the backend is unreachable or verification fails."
         }
       ]
     }

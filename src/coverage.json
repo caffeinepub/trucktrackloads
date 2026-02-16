@@ -1,115 +1,74 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T07:54:25.338Z",
+  "generatedAt": "2026-02-16T08:30:02.857Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 5,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-38",
-        "summary": "Add “Democratic Republic of Congo” to every public-facing “Coverage Areas / countries we provide services” list (including About page, Services page, and Footer coverage text) while keeping the existing layout and styling consistent.",
+        "id": "REQ-44",
+        "summary": "Fix the Admin page rendering so navigating to the admin route reliably shows the admin access gate UI (loading, sign-in prompt, or access denied) instead of a blank/non-rendering screen.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AboutPage.tsx",
-          "frontend/src/pages/ServicesPage.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/components/auth/AdminRouteErrorState.tsx",
+          "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
+          "frontend/src/routeTree.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AboutPage.tsx",
-          "frontend/src/pages/ServicesPage.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/components/auth/AdminRouteErrorState.tsx",
+          "frontend/src/components/auth/AdminRouteErrorBoundary.tsx"
         ]
       },
       {
-        "id": "REQ-39",
-        "summary": "Extend Client and Transporter profiles to store admin-viewable contract details, and add the necessary backend admin-only query methods to retrieve spreadsheet-ready listings for all registered Clients and Transporters (including their contract details).",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-40",
-        "summary": "Update the Client Registration and Transporter Registration forms to capture “Contract Details” (English label) and persist it to the backend, without changing existing required fields or the document upload requirements.",
+        "id": "REQ-45",
+        "summary": "Ensure the primary navigation path to Admin works consistently in production by verifying that the header Admin link and any other Admin entry points navigate correctly in hash-based routing and do not depend on server-side rewrites.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/ClientRegistrationPage.tsx",
-          "frontend/src/pages/TransporterRegistrationPage.tsx"
+          "frontend/src/components/layout/TopNav.tsx",
+          "frontend/src/components/layout/Footer.tsx",
+          "frontend/src/components/auth/AdminSignInPrompt.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/ClientRegistrationPage.tsx",
-          "frontend/src/pages/TransporterRegistrationPage.tsx"
+          "frontend/src/components/auth/AdminSignInPrompt.tsx"
         ]
       },
       {
-        "id": "REQ-41",
-        "summary": "Add spreadsheet-style tables to the Admin Dashboard to view all registered Transporters and all registered Clients, including contract details, and provide a CSV export/download action for each table.",
+        "id": "REQ-46",
+        "summary": "Improve the admin gate troubleshooting experience when auth or role/profile queries fail (e.g., backend unreachable) by displaying a clear English error message and a retry option on the /admin gate instead of staying indefinitely on \"Verifying access...\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/csv.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminDashboardPage.tsx"
+          "frontend/src/hooks/useAuth.ts",
+          "frontend/src/components/auth/RequireAdmin.tsx",
+          "frontend/src/components/auth/AdminRouteErrorState.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/csv.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminDashboardPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-42",
-        "summary": "Add an admin-configurable Android APK download link setting stored in the backend, and display it prominently on the Admin Dashboard as a clickable download link.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminDashboardPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminDashboardPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-43",
-        "summary": "Standardize load weight entry and display to tonnage (tons) across the Load Board and Admin Dashboard: update labels, input hints, and rendered units so users see and enter weight in tons instead of kilograms.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/LoadBoardPage.tsx",
-          "frontend/src/pages/AdminDashboardPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/LoadBoardPage.tsx",
-          "frontend/src/pages/AdminDashboardPage.tsx"
+          "frontend/src/hooks/useAuth.ts",
+          "frontend/src/components/auth/RequireAdmin.tsx",
+          "frontend/src/components/auth/AdminRouteErrorState.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/layout/Footer.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AboutPage.tsx",
+    "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
+    "frontend/src/components/auth/AdminRouteErrorState.tsx",
+    "frontend/src/components/auth/AdminSignInPrompt.tsx",
+    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/hooks/useAuth.ts",
+    "frontend/src/hooks/useUserProfile.ts",
     "frontend/src/pages/AdminDashboardPage.tsx",
-    "frontend/src/pages/ClientRegistrationPage.tsx",
-    "frontend/src/pages/LoadBoardPage.tsx",
-    "frontend/src/pages/ServicesPage.tsx",
-    "frontend/src/pages/TransporterRegistrationPage.tsx",
-    "frontend/src/utils/csv.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

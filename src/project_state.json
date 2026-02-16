@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 21,
+  "projectStateVersion": 23,
   "summary": "Rename direction changed: app should remain/return to TruckTrackAfrica (instead of TruckTrackLoads). Client load posting should use Loading Location (Pick Up) and Offloading Location (Drop Off) terminology for the origin/destination fields.",
   "architectural_notes": [
     "Enforce admin-only publish/approval gate before any load/post becomes visible/live.",
@@ -13,9 +13,10 @@
     "Standardize weight units as tonnage (tons) in data model/UI validations to avoid mixed-unit ambiguity."
   ],
   "known_issues": [
-    "Security risk: user requested a fixed admin username/password; must not store or deploy plaintext credentials."
+    "Security risk: user requested a fixed admin username/password; must not store or deploy plaintext credentials.",
+    "Admin page is not rendering/visible for the user (they report it doesn't show the /admin page or the login/access gate UI), blocking admin access."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-implement-site-navigation-and-routing-for-the-required-pages-home-about-us-company-profile-services-load-board-transporter-registration-client-registration-contact-us-and-admin-dashboard",
@@ -342,6 +343,30 @@
       "title": "Standardize load weight entry and display to tonnage (tons) across the Load Board and Admin Dashboard: update labels, input hints, and rendered units so users see and enter weight in tons instead of kilograms.",
       "reqIds": [
         "REQ-43"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-admin-page-rendering-so-navigating-to-the-admin-route-reliably-shows-the-admin-access-gate-ui-loading-sign-in-prompt-or-access-denied-instead-of-a-blank-non-rendering-screen",
+      "title": "Fix the Admin page rendering so navigating to the admin route reliably shows the admin access gate UI (loading, sign-in prompt, or access denied) instead of a blank/non-rendering screen.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-primary-navigation-path-to-admin-works-consistently-in-production-by-verifying-that-the-header-admin-link-and-any-other-admin-entry-points-navigate-correctly-in-hash-based-routing-and-do-not-depend-on-server-side-rewrites",
+      "title": "Ensure the primary navigation path to Admin works consistently in production by verifying that the header Admin link and any other Admin entry points navigate correctly in hash-based routing and do not depend on server-side rewrites.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-the-admin-gate-troubleshooting-experience-when-auth-or-role-profile-queries-fail-e-g-backend-unreachable-by-displaying-a-clear-english-error-message-and-a-retry-option-on-the-admin-gate-instead-of-staying-indefinitely-on-verifying-access",
+      "title": "Improve the admin gate troubleshooting experience when auth or role/profile queries fail (e.g., backend unreachable) by displaying a clear English error message and a retry option on the /admin gate instead of staying indefinitely on \"Verifying access...\".",
+      "reqIds": [
+        "REQ-46"
       ],
       "version": 1
     }

@@ -15,7 +15,10 @@ export default function AdminSignInPrompt() {
     // Navigate back to /admin after successful login
     const redirectPath = sessionStorage.getItem('adminLoginRedirect') || '/admin';
     sessionStorage.removeItem('adminLoginRedirect');
-    navigate({ to: redirectPath });
+    // Small delay to allow identity to be set
+    setTimeout(() => {
+      navigate({ to: redirectPath });
+    }, 100);
   };
 
   return (

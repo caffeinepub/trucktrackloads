@@ -3,7 +3,7 @@ import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
-import Migration "migration";
+
 import AccessControl "authorization/access-control";
 import Text "mo:core/Text";
 import Storage "blob-storage/Storage";
@@ -11,7 +11,7 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 
 // Explicit migration using the with clause
-(with migration = Migration.run)
+
 actor {
   include MixinStorage();
 

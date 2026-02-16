@@ -2,76 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-democratic-republic-of-congo-to-every-public-facing-coverage-areas-countries-we-provide-services-list-including-about-page-services-page-and-footer-coverage-text-while-keeping-the-existing-layout-and-styling-consistent",
-      "featureTitle": "Add “Democratic Republic of Congo” to every public-facing “Coverage Areas / countries we provide services” list (including About page, Services page, and Footer coverage text) while keeping the existing layout and styling consistent.",
+      "featureId": "feature-fix-the-admin-page-rendering-so-navigating-to-the-admin-route-reliably-shows-the-admin-access-gate-ui-loading-sign-in-prompt-or-access-denied-instead-of-a-blank-non-rendering-screen",
+      "featureTitle": "Fix the Admin page rendering so navigating to the admin route reliably shows the admin access gate UI (loading, sign-in prompt, or access denied) instead of a blank/non-rendering screen.",
       "files": [
-        "frontend/src/components/layout/Footer.tsx",
-        "frontend/src/pages/AboutPage.tsx",
-        "frontend/src/pages/ServicesPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-38"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-client-registration-and-transporter-registration-forms-to-capture-contract-details-english-label-and-persist-it-to-the-backend-without-changing-existing-required-fields-or-the-document-upload-requirements",
-      "featureTitle": "Update the Client Registration and Transporter Registration forms to capture “Contract Details” (English label) and persist it to the backend, without changing existing required fields or the document upload requirements.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/ClientRegistrationPage.tsx",
-        "frontend/src/pages/TransporterRegistrationPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-40"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-spreadsheet-style-tables-to-the-admin-dashboard-to-view-all-registered-transporters-and-all-registered-clients-including-contract-details-and-provide-a-csv-export-download-action-for-each-table",
-      "featureTitle": "Add spreadsheet-style tables to the Admin Dashboard to view all registered Transporters and all registered Clients, including contract details, and provide a CSV export/download action for each table.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminDashboardPage.tsx",
-        "frontend/src/utils/csv.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-41"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-an-admin-configurable-android-apk-download-link-setting-stored-in-the-backend-and-display-it-prominently-on-the-admin-dashboard-as-a-clickable-download-link",
-      "featureTitle": "Add an admin-configurable Android APK download link setting stored in the backend, and display it prominently on the Admin Dashboard as a clickable download link.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
+        "frontend/src/components/auth/AdminRouteErrorState.tsx",
         "frontend/src/pages/AdminDashboardPage.tsx"
       ],
       "components": [
@@ -84,16 +19,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-42"
+        "REQ-44"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-standardize-load-weight-entry-and-display-to-tonnage-tons-across-the-load-board-and-admin-dashboard-update-labels-input-hints-and-rendered-units-so-users-see-and-enter-weight-in-tons-instead-of-kilograms",
-      "featureTitle": "Standardize load weight entry and display to tonnage (tons) across the Load Board and Admin Dashboard: update labels, input hints, and rendered units so users see and enter weight in tons instead of kilograms.",
+      "featureId": "feature-ensure-the-primary-navigation-path-to-admin-works-consistently-in-production-by-verifying-that-the-header-admin-link-and-any-other-admin-entry-points-navigate-correctly-in-hash-based-routing-and-do-not-depend-on-server-side-rewrites",
+      "featureTitle": "Ensure the primary navigation path to Admin works consistently in production by verifying that the header Admin link and any other Admin entry points navigate correctly in hash-based routing and do not depend on server-side rewrites.",
       "files": [
-        "frontend/src/pages/AdminDashboardPage.tsx",
-        "frontend/src/pages/LoadBoardPage.tsx"
+        "frontend/src/components/auth/AdminSignInPrompt.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -105,7 +39,29 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-43"
+        "REQ-45"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-the-admin-gate-troubleshooting-experience-when-auth-or-role-profile-queries-fail-e-g-backend-unreachable-by-displaying-a-clear-english-error-message-and-a-retry-option-on-the-admin-gate-instead-of-staying-indefinitely-on-verifying-access",
+      "featureTitle": "Improve the admin gate troubleshooting experience when auth or role/profile queries fail (e.g., backend unreachable) by displaying a clear English error message and a retry option on the /admin gate instead of staying indefinitely on \"Verifying access...\".",
+      "files": [
+        "frontend/src/components/auth/AdminRouteErrorState.tsx",
+        "frontend/src/components/auth/RequireAdmin.tsx",
+        "frontend/src/hooks/useAuth.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-46"
       ],
       "confidence": "high"
     }

@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useQueries';
 import { toast } from 'sonner';
 import RequireAdmin from '@/components/auth/RequireAdmin';
+import AdminRouteErrorBoundary from '@/components/auth/AdminRouteErrorBoundary';
 import { Principal } from '@dfinity/principal';
 import { getAdSettings, saveAdSettings, AD_CONFIG } from '@/config/ads';
 import AdSnippetPreviewFrame from '@/components/ads/AdSnippetPreviewFrame';
@@ -418,7 +419,7 @@ function AdminDashboardContent() {
                           <TableCell>{transporter.email}</TableCell>
                           <TableCell>{transporter.phone}</TableCell>
                           <TableCell className="max-w-xs truncate">{transporter.address || 'N/A'}</TableCell>
-                          <TableCell>{transporter.documents.length} uploaded</TableCell>
+                          <TableCell>{transporter.documents.length} file(s)</TableCell>
                           <TableCell className="max-w-xs truncate">
                             {transporter.contract?.contractText || 'N/A'}
                           </TableCell>
@@ -436,7 +437,7 @@ function AdminDashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle>Contact Messages</CardTitle>
-              <CardDescription>View all contact form submissions</CardDescription>
+              <CardDescription>Messages submitted through the contact form</CardDescription>
             </CardHeader>
             <CardContent>
               {contactsLoading ? (
@@ -459,6 +460,9 @@ function AdminDashboardContent() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm whitespace-pre-wrap">{contact.message}</p>
+                        <p className="text-xs text-muted-foreground mt-4">
+                          Principal: {principal.toString()}
+                        </p>
                       </CardContent>
                     </Card>
                   ))}
@@ -471,152 +475,122 @@ function AdminDashboardContent() {
         <TabsContent value="apk">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5" />
-                Android APK Download
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-primary" />
+                <CardTitle>Android APK Download Link</CardTitle>
+              </div>
               <CardDescription>
-                Configure the Android APK download link for users
+                Manage the download link for the Android app APK file
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {apkLinkLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading APK link...</p>
-                </div>
-              ) : (
-                <>
-                  {apkLink ? (
-                    <div className="space-y-3">
-                      <Label>Current APK Download Link</Label>
-                      <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                        <a
-                          href={apkLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 text-primary hover:underline truncate"
-                        >
-                          {apkLink}
-                        </a>
-                        <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-muted/50 rounded-lg">
-                      <Smartphone className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No APK download link configured yet</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="apkLink">Set New APK Download Link</Label>
-                    <Input
-                      id="apkLink"
-                      type="url"
-                      value={apkLinkInput}
-                      onChange={(e) => setApkLinkInput(e.target.value)}
-                      placeholder="https://example.com/app.apk"
-                    />
-                    <Button onClick={handleSaveApkLink} disabled={setApkLink.isPending} className="w-full">
-                      {setApkLink.isPending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        'Save APK Link'
-                      )}
-                    </Button>
+              <div className="space-y-2">
+                <Label>Current APK Download Link</Label>
+                {apkLinkLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span>Loading...</span>
                   </div>
-                </>
-              )}
+                ) : apkLink ? (
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <a
+                      href={apkLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex-1 truncate"
+                    >
+                      {apkLink}
+                    </a>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No APK link set</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="apk-link">Set New APK Download Link</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="apk-link"
+                    type="url"
+                    placeholder="https://example.com/app.apk"
+                    value={apkLinkInput}
+                    onChange={(e) => setApkLinkInput(e.target.value)}
+                  />
+                  <Button onClick={handleSaveApkLink} disabled={setApkLink.isPending}>
+                    {setApkLink.isPending ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enter the full URL to the APK file (e.g., from Google Drive, Dropbox, or your own server)
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="ads">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Ad Configuration
-                </CardTitle>
-                <CardDescription>
-                  Configure bottom ad settings and HTML snippet
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="ad-enabled">Enable Bottom Ad</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Show ad banner at the bottom of pages
-                    </p>
-                  </div>
-                  <Switch
-                    id="ad-enabled"
-                    checked={adEnabled}
-                    onCheckedChange={setAdEnabled}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="ad-snippet">Ad HTML Snippet</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleResetAdSnippet}
-                      className="h-8 text-xs"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Reset to Default
-                    </Button>
-                  </div>
-                  <Textarea
-                    id="ad-snippet"
-                    value={adSnippet}
-                    onChange={(e) => setAdSnippet(e.target.value)}
-                    placeholder="Paste your ad HTML snippet here..."
-                    rows={12}
-                    className="font-mono text-xs"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Paste your AdMob or Google Ads HTML snippet here. The snippet will be rendered in a sandboxed iframe.
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <CardTitle>Ad Settings</CardTitle>
+              </div>
+              <CardDescription>Configure bottom ad display and snippet</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="ad-enabled">Enable Bottom Ad</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show ad banner at the bottom of pages
                   </p>
                 </div>
+                <Switch
+                  id="ad-enabled"
+                  checked={adEnabled}
+                  onCheckedChange={setAdEnabled}
+                />
+              </div>
 
-                <div className="pt-2">
-                  <h4 className="font-medium mb-2">AdMob Configuration</h4>
-                  <div className="space-y-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                    <p><span className="font-medium">App ID:</span> {AD_CONFIG.admob.appId}</p>
-                    <p><span className="font-medium">Bottom Ad Unit ID:</span> {AD_CONFIG.admob.bottomAdUnitId}</p>
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="ad-snippet">Ad Snippet (HTML)</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetAdSnippet}
+                    className="h-8"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset to Default
+                  </Button>
                 </div>
+                <Textarea
+                  id="ad-snippet"
+                  value={adSnippet}
+                  onChange={(e) => setAdSnippet(e.target.value)}
+                  placeholder="Paste your ad network HTML snippet here..."
+                  className="font-mono text-xs min-h-[200px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste your ad network's HTML snippet (e.g., Google AdSense, AdMob)
+                </p>
+              </div>
 
-                <Button onClick={handleSaveAdSettings} className="w-full">
-                  Save Ad Settings
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Live Preview</CardTitle>
-                <CardDescription>
-                  Preview how the ad will appear on the site
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden bg-muted/30">
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="border rounded-lg p-4 bg-muted/30">
                   <AdSnippetPreviewFrame snippet={adSnippet} />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+
+              <Button onClick={handleSaveAdSettings} className="w-full">
+                Save Ad Settings
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
@@ -625,8 +599,10 @@ function AdminDashboardContent() {
 
 export default function AdminDashboardPage() {
   return (
-    <RequireAdmin>
-      <AdminDashboardContent />
-    </RequireAdmin>
+    <AdminRouteErrorBoundary>
+      <RequireAdmin>
+        <AdminDashboardContent />
+      </RequireAdmin>
+    </AdminRouteErrorBoundary>
   );
 }

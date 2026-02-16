@@ -3,10 +3,23 @@ import { useGetCallerUserProfile, useGetCallerUserRole } from './useUserProfile'
 
 export function useAuth() {
   const { identity, loginStatus } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched: profileFetched } = useGetCallerUserProfile();
-  const { data: userRole, isLoading: roleLoading, isFetched: roleFetched } = useGetCallerUserRole();
+  const { 
+    data: userProfile, 
+    isLoading: profileLoading, 
+    isFetched: profileFetched,
+    error: profileError 
+  } = useGetCallerUserProfile();
+  const { 
+    data: userRole, 
+    isLoading: roleLoading, 
+    isFetched: roleFetched,
+    error: roleError 
+  } = useGetCallerUserRole();
 
   const isAuthenticated = !!identity;
+  
+  // Check for errors in role/profile queries
+  const error = profileError || roleError;
   
   // Treat role/profile checks as loading until queries are actually fetched for an authenticated user
   const isLoading = loginStatus === 'initializing' || 
@@ -27,5 +40,6 @@ export function useAuth() {
     userProfile,
     userRole,
     showProfileSetup,
+    error: error as Error | null,
   };
 }

@@ -1,58 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T07:54:25.334Z",
-  "summary": "Most requested features appear to be implemented: DRC added to at least About + Footer coverage text, contract details added to client/transporter registration and backend types, admin dashboard now includes spreadsheet-style client/transporter views with CSV export utilities, and an APK link setting is added. However, the backend APK link getter is not admin-restricted as required, and some implemented additions (e.g., contract start/end dates, ad settings/brand/contact changes) were not explicitly requested.",
+  "generatedAt": "2026-02-16T08:30:02.852Z",
+  "summary": "Implemented a visible error boundary/state for the admin route and enhanced the admin gate to handle auth/role query errors (with retry/sign-out actions), reducing chances of blank/non-rendering admin screens. However, there is insufficient diff evidence that navigation entry points (TopNav/Footer) and routing configuration were updated/verified for consistent hash-based navigation to \"/#/admin\".",
   "missing_requirements": [
     {
-      "id": "REQ-42",
-      "requirement": "Backend provides admin-only methods to get and set the APK download URL (stored persistently in canister state).",
-      "reason": "The diff shows `setAndroidApkLink` enforcing admin authorization, but `getAndroidApkLink` has no admin check and is callable by anyone. This violates the 'admin-only methods to get and set' requirement (at least for the getter).",
+      "id": "REQ-45",
+      "requirement": "Ensure the primary navigation path to Admin works consistently in production (header Admin link and other entry points navigate correctly in hash-based routing; footer link remains \"/#/admin\"; direct \"/#/admin\" works).",
+      "reason": "The diff summary does not include any actual code changes to routing configuration (e.g., routeTree/App hash history setup) or to navigation components (TopNav/Footer). Without those diffs, it cannot be verified that the header/footer links were corrected/verified to use hash routing and work reliably in production.",
       "evidence": [
-        "backend/main.mo"
+        "frontend-file-summaries.txt (mentions TopNav/Footer/routeTree/App but no corresponding diffs shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added contract start/end date fields as part of contract details (beyond a simple 'Contract Details' text field).",
-      "reason": "BuildRequest only specifies capturing/storing “Contract Details” (text) for admin spreadsheet viewing; it does not request additional structured fields like startDate/endDate.",
+      "description": "Added \"Contact support\" mailto link to moleleholdings101@gmail.com in the new admin error state UI.",
+      "reason": "The BuildRequest did not request adding a support contact section/email link as part of the admin error UI; it only required a clear English error message and a retry action.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo",
-        "frontend/src/pages/ClientRegistrationPage.tsx",
-        "frontend/src/pages/TransporterRegistrationPage.tsx"
+        "frontend/src/components/auth/AdminRouteErrorState.tsx"
       ]
     },
     {
-      "description": "Ad settings management UI/logic in the Admin Dashboard (ad snippet enable/reset/preview).",
-      "reason": "Not requested in REQ-38 through REQ-43 (and non-goals exclude external integrations but do not mention ad configuration).",
+      "description": "Added sessionStorage-based post-login redirect handling for the admin sign-in prompt.",
+      "reason": "The BuildRequest did not explicitly request storing a redirect path in sessionStorage and performing delayed navigation after login; it only required that the admin gate UI render reliably when signed out/signed in/non-admin/admin.",
       "evidence": [
-        "frontend/src/pages/AdminDashboardPage.tsx"
-      ]
-    },
-    {
-      "description": "Brand/content changes unrelated to the listed requirements (e.g., renaming/brand references, contact detail updates, always-visible Admin link in nav).",
-      "reason": "Not requested in REQ-38 through REQ-43; these appear as additional scope beyond the BuildRequest items.",
-      "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/components/auth/AdminSignInPrompt.tsx"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.68,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/layout/Footer.tsx",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AboutPage.tsx",
+    "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
+    "frontend/src/components/auth/AdminRouteErrorState.tsx",
+    "frontend/src/components/auth/AdminSignInPrompt.tsx",
+    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/hooks/useAuth.ts",
+    "frontend/src/hooks/useUserProfile.ts",
     "frontend/src/pages/AdminDashboardPage.tsx",
-    "frontend/src/pages/ClientRegistrationPage.tsx",
-    "frontend/src/pages/LoadBoardPage.tsx",
-    "frontend/src/pages/ServicesPage.tsx",
-    "frontend/src/pages/TransporterRegistrationPage.tsx",
-    "frontend/src/utils/csv.ts",
     "project_state.json"
   ]
 }
