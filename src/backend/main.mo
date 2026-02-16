@@ -3,16 +3,19 @@ import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
+import Nat "mo:core/Nat";
+import List "mo:core/List";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Text "mo:core/Text";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Float "mo:core/Float";
+import Migration "migration";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import Time "mo:core/Time";
 
-
-
+(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -20,8 +23,6 @@ actor {
   include MixinAuthorization(accessControlState);
 
   let approvalState = UserApproval.initState(accessControlState);
-
-  // ------------- Admin login password system -----------------
   var adminCredentials : (Text, Text) = ("Gushna", "Gushgesh#9");
   let hiddenAdminToken = "XXI%pccQ2024^aCFEiNE";
 
@@ -41,7 +42,6 @@ actor {
     adminCredentials := (username, password);
   };
 
-  // Trucking system
   public type TruckType = {
     #triaxle;
     #superlinkFlatdeck;
@@ -64,6 +64,7 @@ actor {
     contractText : Text;
     startDate : Int;
     endDate : Int;
+    year : Nat;
   };
 
   public type ClientVerificationStatus = {
@@ -108,12 +109,14 @@ actor {
   public type Load = {
     client : Principal;
     description : Text;
+    price : Float;
     weight : Float;
     loadingLocation : Text;
     offloadingLocation : Text;
     truckType : TruckType;
-    isApproved : Bool;
     assignedTransporter : ?Principal;
+    status : Text;
+    isApproved : Bool;
     tracking : ?TrackingUpdate;
     confirmation : LoadConfirmation;
   };
@@ -156,20 +159,17 @@ actor {
     timestamp : Int;
   };
 
-  // Data Stores
   let clients = Map.empty<Principal, ClientInfo>();
   let transporters = Map.empty<Principal, TransporterDetails>();
   let loads = Map.empty<Text, Load>();
   var loadCount = 0;
-
   let userProfiles = Map.empty<Principal, UserProfile>();
   let liveLocations = Map.empty<Principal, LiveLocation>();
   let locationEvidenceStore = Map.empty<Principal, [LocationEvidence]>();
   let transporterStatusMap = Map.empty<Principal, TransporterStatus>();
-
+  var years = List.empty<Nat>();
   var androidApkLink : ?Text = null;
 
-  // New Approval Methods
   public query ({ caller }) func isCallerApproved() : async Bool {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
   };
@@ -192,7 +192,6 @@ actor {
     UserApproval.listApprovals(approvalState);
   };
 
-  // App Methods
   public query ({ caller }) func getAndroidApkLink() : async ?Text {
     androidApkLink;
   };
@@ -225,7 +224,6 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Contact mechanism
   let contacts = Map.empty<Principal, ContactInfo>();
 
   public shared ({ caller }) func saveContactInfo(contact : ContactInfo) : async () {
@@ -337,8 +335,6 @@ actor {
     iter.toArray();
   };
 
-  // NEW: AdminView tuple type for all clients
-
   public query ({ caller }) func getAllClientsWithIds() : async [(Principal, ClientInfo)] {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can view all clients");
@@ -347,16 +343,15 @@ actor {
     iter.toArray();
   };
 
-  // Transporter loadboard
   public query ({ caller }) func getTransporterLoadBoard() : async [Load] {
-    if (not isVerifiedTransporter(caller)) {
+    if (not checkIsVerifiedTransporter(caller)) {
       Runtime.trap("Unauthorized: Only transporters can access this route");
     };
     let allLoads = loads.values().toArray();
     allLoads.filter(func(l) { l.isApproved });
   };
 
-  func isVerifiedTransporter(caller : Principal) : Bool {
+  func checkIsVerifiedTransporter(caller : Principal) : Bool {
     switch (transporters.get(caller)) {
       case (null) {
         false;
@@ -388,8 +383,6 @@ actor {
     let iter = transporters.values();
     iter.toArray();
   };
-
-  // NEW: AdminView tuple type for all transporters
 
   public query ({ caller }) func getAllTransportersWithIds() : async [(Principal, TransporterDetails)] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
@@ -454,7 +447,6 @@ actor {
     };
   };
 
-  // NEW: tuple type for admin query of pending loads
   public query ({ caller }) func getAllPendingLoadsWithIds() : async [(Text, Load)] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can view pending loads");
@@ -469,7 +461,20 @@ actor {
     pendingEntries;
   };
 
-  // Contracts
+  public query ({ caller }) func getAllApprovedLoadsWithIds() : async [(Text, Load)] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view approved loads");
+    };
+
+    let entries = loads.entries().toArray();
+    let approvedEntries = entries.filter(
+      func((_, load)) {
+        load.isApproved;
+      }
+    );
+    approvedEntries;
+  };
+
   public shared ({ caller }) func postContract(contract : Contract) : async () {
     switch (clients.get(caller)) {
       case (null) {
@@ -487,7 +492,7 @@ actor {
   };
 
   public query ({ caller }) func getContracts() : async [Contract] {
-    if (not isVerifiedTransporter(caller)) {
+    if (not checkIsVerifiedTransporter(caller)) {
       Runtime.trap("Unauthorized: Only transporters can view contracts");
     };
     getAllVerifiedContracts();
@@ -504,6 +509,14 @@ actor {
   };
 
   public query ({ caller }) func getClientContracts(client : Principal) : async [Contract] {
+    let isAdmin = AccessControl.isAdmin(accessControlState, caller);
+    let isOwner = caller == client;
+    let isVerifiedTransporter = checkIsVerifiedTransporter(caller);
+
+    if (not (isAdmin or isOwner or isVerifiedTransporter)) {
+      Runtime.trap("Unauthorized: Only the client, verified transporters, or admins can view client contracts");
+    };
+
     switch (clients.get(client)) {
       case (null) {
         Runtime.trap("Client not found");
@@ -554,6 +567,14 @@ actor {
 
       if (load.assignedTransporter != existing.assignedTransporter) {
         Runtime.trap("Unauthorized: Only admins can change assigned transporter");
+      };
+
+      if (load.price != existing.price) {
+        Runtime.trap("Unauthorized: Only admins can update load price");
+      };
+
+      if (load.status != existing.status) {
+        Runtime.trap("Unauthorized: Only admins can update load status");
       };
     };
 
@@ -652,9 +673,6 @@ actor {
     );
   };
 
-  // --- NEW STORAGE API FUNCTIONS ----
-
-  // Transporter Live Location Tracking
   public shared ({ caller }) func updateTransporterLocation(location : LiveLocation) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only signed-in transporters can submit location updates");
@@ -672,7 +690,6 @@ actor {
     liveLocations.add(caller, locationWithTimestamp);
   };
 
-  // Admin-only function to get all transporter locations and details
   public query ({ caller }) func getAllTransportersWithLocations() : async [(Principal, TransporterDetails, ?LiveLocation)] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can view transporter locations");
@@ -690,13 +707,11 @@ actor {
     result;
   };
 
-  // New function to handle location screenshots
   public shared ({ caller }) func addLocationEvidence(location : LiveLocation, screenshot : Storage.ExternalBlob) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only signed-in users can submit location evidence");
     };
 
-    // Verify caller is a registered transporter
     let transporterDetails = switch (transporters.get(caller)) {
       case (null) { Runtime.trap("Unauthorized: Only registered transporters can submit location evidence") };
       case (?details) { details };
@@ -727,7 +742,6 @@ actor {
     };
   };
 
-  // Set transporter status
   public shared ({ caller }) func setTransporterStatus(statusText : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only signed-in transporters can submit statuses");
@@ -745,17 +759,36 @@ actor {
     transporterStatusMap.add(caller, status);
   };
 
-  // Get individual transporter status (publicly accessible so admin can call for any transporter
   public query ({ caller }) func getTransporterStatus(transporterId : Principal) : async ?TransporterStatus {
     transporterStatusMap.get(transporterId);
   };
 
-  // Get all transporter statuses (admin-only)
   public query ({ caller }) func getAllTransporterStatuses() : async [(Principal, TransporterStatus)] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can view all transporter statuses");
     };
     let iter = transporterStatusMap.entries();
     iter.toArray();
+  };
+
+  public query ({ caller }) func getYears() : async [Nat] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view years");
+    };
+    years.toArray();
+  };
+
+  public shared ({ caller }) func addYear(year : Nat) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can add years");
+    };
+    years.add(year);
+  };
+
+  public shared ({ caller }) func deleteYear(year : Nat) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can delete years");
+    };
+    years := years.filter(func(y) { y != year });
   };
 };

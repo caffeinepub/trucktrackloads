@@ -16,6 +16,7 @@ export class ExternalBlob {
 }
 export interface Load {
     weight: number;
+    status: string;
     client: Principal;
     isApproved: boolean;
     description: string;
@@ -24,6 +25,7 @@ export interface Load {
     tracking?: TrackingUpdate;
     assignedTransporter?: Principal;
     confirmation: LoadConfirmation;
+    price: number;
     offloadingLocation: string;
 }
 export interface LiveLocation {
@@ -76,6 +78,7 @@ export interface LoadConfirmation {
 }
 export interface Contract {
     endDate: bigint;
+    year: bigint;
     contractText: string;
     startDate: bigint;
 }
@@ -117,13 +120,16 @@ export enum UserRole {
 }
 export interface backendInterface {
     addLocationEvidence(location: LiveLocation, screenshot: ExternalBlob): Promise<void>;
+    addYear(year: bigint): Promise<void>;
     adminLogin(username: string, password: string): Promise<string>;
     approveLoad(loadId: string, isApproved: boolean): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignLoad(loadId: string, transporterId: Principal): Promise<void>;
     createLoad(load: Load): Promise<string>;
     deleteLoad(loadId: string): Promise<void>;
+    deleteYear(year: bigint): Promise<void>;
     getAllApprovedLoads(): Promise<Array<Load>>;
+    getAllApprovedLoadsWithIds(): Promise<Array<[string, Load]>>;
     getAllClients(): Promise<Array<ClientInfo>>;
     getAllClientsWithIds(): Promise<Array<[Principal, ClientInfo]>>;
     getAllContactMessages(): Promise<Array<[Principal, ContactInfo]>>;
@@ -150,6 +156,7 @@ export interface backendInterface {
     getTransporterStatus(transporterId: Principal): Promise<TransporterStatus | null>;
     getTruckTypeOptions(): Promise<Array<TruckTypeOption>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getYears(): Promise<Array<bigint>>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;

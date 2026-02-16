@@ -4,261 +4,289 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
-import { useGetCallerClientInfo, useGetCallerTransporterDetails, usePostContract, useGetContracts } from '@/hooks/useQueries';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useGetCallerClientInfo, useGetCallerTransporterDetails, usePostContract, useGetContracts, useGetYears } from '@/hooks/useQueries';
+import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { toast } from 'sonner';
-import { Loader2, FileText, AlertCircle, Calendar, FileSignature } from 'lucide-react';
-import ProfileSetupModal from '@/components/auth/ProfileSetupModal';
-import { ClientVerificationStatus, Contract } from '../backend';
-import { Link } from '@tanstack/react-router';
+import { FileText, Send, Calendar, AlertCircle } from 'lucide-react';
+import { Contract } from '@/backend';
 
 export default function ContractsPage() {
-  const { isAuthenticated, showProfileSetup } = useAuth();
-  const { data: clientInfo, isLoading: clientInfoLoading } = useGetCallerClientInfo();
-  const { data: transporterDetails, isLoading: transporterLoading } = useGetCallerTransporterDetails();
+  const { identity } = useInternetIdentity();
+  const { data: clientInfo } = useGetCallerClientInfo();
+  const { data: transporterDetails } = useGetCallerTransporterDetails();
   const { data: contracts = [], isLoading: contractsLoading } = useGetContracts();
+  const { data: years = [], isLoading: yearsLoading } = useGetYears();
   const postContract = usePostContract();
 
   const [contractText, setContractText] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [yearFilter, setYearFilter] = useState<string>('all');
 
-  const isVerifiedClient = clientInfo?.verificationStatus === ClientVerificationStatus.verified;
-  const isVerifiedTransporter = transporterDetails?.verificationStatus === ClientVerificationStatus.verified;
+  const isVerifiedClient = clientInfo?.verificationStatus === 'verified';
+  const isVerifiedTransporter = transporterDetails?.verificationStatus === 'verified';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePostContract = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isAuthenticated) {
-      toast.error('Please log in to post a contract');
+    if (!selectedYear) {
+      toast.error('Please select a year for the contract');
       return;
     }
 
     if (!contractText.trim() || !startDate || !endDate) {
-      toast.error('Please fill in all required fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
-    const startTimestamp = new Date(startDate).getTime() * 1000000; // Convert to nanoseconds
-    const endTimestamp = new Date(endDate).getTime() * 1000000;
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
 
-    if (endTimestamp <= startTimestamp) {
+    if (end <= start) {
       toast.error('End date must be after start date');
       return;
     }
 
     try {
-      await postContract.mutateAsync({
+      const contract: Contract = {
         contractText: contractText.trim(),
-        startDate: BigInt(startTimestamp),
-        endDate: BigInt(endTimestamp),
-      });
-      toast.success('Contract posted successfully!');
+        startDate: BigInt(start * 1_000_000),
+        endDate: BigInt(end * 1_000_000),
+        year: BigInt(selectedYear),
+      };
+
+      await postContract.mutateAsync(contract);
+      toast.success('Contract posted successfully');
       setContractText('');
       setStartDate('');
       setEndDate('');
+      setSelectedYear('');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to post contract';
-      toast.error(errorMessage);
-      console.error(error);
+      toast.error(error.message || 'Failed to post contract');
     }
   };
 
-  const formatDate = (timestamp: bigint): string => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const sortedYears = [...years].sort((a, b) => Number(b) - Number(a));
+
+  const filteredContracts = yearFilter === 'all'
+    ? contracts
+    : contracts.filter(c => c.year.toString() === yearFilter);
+
+  const formatDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1_000_000);
+    return date.toLocaleDateString();
   };
 
+  if (!identity) {
+    return (
+      <div className="container py-12">
+        <Card>
+          <CardHeader>
+            <CardTitle>Contracts</CardTitle>
+            <CardDescription>Please sign in to access contracts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">You need to be signed in to view or post contracts.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <ProfileSetupModal open={showProfileSetup} />
+    <div className="container py-12">
+      <div className="mb-8">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">Contracts</h1>
+        <p className="text-muted-foreground">
+          Post and browse transportation contracts
+        </p>
+      </div>
 
-      <div className="container py-10">
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-semibold mb-3">Contracts</h1>
-          <p className="text-muted-foreground">Post and browse contract opportunities</p>
-        </div>
+      <Tabs defaultValue={isVerifiedClient ? 'post' : 'browse'} className="space-y-6">
+        <TabsList>
+          {isVerifiedClient && (
+            <TabsTrigger value="post">
+              <Send className="h-4 w-4 mr-2" />
+              Post Contract
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="browse">
+            <FileText className="h-4 w-4 mr-2" />
+            Browse Contracts
+          </TabsTrigger>
+        </TabsList>
 
-        {!isAuthenticated ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Please <Link to="/" className="text-primary hover:underline">log in</Link> to access contracts.
-              If you don't have an account, register as a{' '}
-              <Link to="/register/client" className="underline font-medium">client</Link> or{' '}
-              <Link to="/register/transporter" className="underline font-medium">transporter</Link>.
-            </AlertDescription>
-          </Alert>
-        ) : clientInfoLoading || transporterLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Client: Post Contract Form */}
-            {isVerifiedClient && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileSignature className="h-5 w-5" />
-                    Post a Contract
-                  </CardTitle>
-                  <CardDescription>Create a new contract opportunity for transporters</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+        {isVerifiedClient && (
+          <TabsContent value="post">
+            <Card>
+              <CardHeader>
+                <CardTitle>Post a New Contract</CardTitle>
+                <CardDescription>
+                  Share contract details with verified transporters
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {years.length === 0 && !yearsLoading ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No years are currently available for contract posting. Please contact an administrator to add years before posting contracts.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <form onSubmit={handlePostContract} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="contract-text">Contract Details *</Label>
+                      <Label htmlFor="year">Contract Year *</Label>
+                      <Select
+                        value={selectedYear}
+                        onValueChange={setSelectedYear}
+                        disabled={yearsLoading || years.length === 0}
+                      >
+                        <SelectTrigger id="year">
+                          <SelectValue placeholder={yearsLoading ? 'Loading years...' : 'Select year'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sortedYears.map((year) => (
+                            <SelectItem key={year.toString()} value={year.toString()}>
+                              {year.toString()}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contractText">Contract Details *</Label>
                       <Textarea
-                        id="contract-text"
-                        placeholder="Describe the contract terms, requirements, deliverables..."
+                        id="contractText"
                         value={contractText}
                         onChange={(e) => setContractText(e.target.value)}
-                        rows={5}
+                        placeholder="Enter contract terms, requirements, and details..."
+                        rows={6}
+                        required
                       />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="start-date">Start Date *</Label>
+                        <Label htmlFor="startDate">Start Date *</Label>
                         <Input
-                          id="start-date"
+                          id="startDate"
                           type="date"
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
+                          required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="end-date">End Date *</Label>
+                        <Label htmlFor="endDate">End Date *</Label>
                         <Input
-                          id="end-date"
+                          id="endDate"
                           type="date"
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
+                          required
                         />
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={postContract.isPending} className="w-full">
-                      {postContract.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Posting Contract...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Post Contract
-                        </>
-                      )}
+                    <Button
+                      type="submit"
+                      disabled={postContract.isPending || years.length === 0}
+                      className="w-full"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {postContract.isPending ? 'Posting...' : 'Post Contract'}
                     </Button>
                   </form>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transporter: Browse Contracts */}
-            {isVerifiedTransporter && (
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Available Contracts
-                    </CardTitle>
-                    <CardDescription>Browse contract opportunities from verified clients</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {contractsLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      </div>
-                    ) : contracts.length === 0 ? (
-                      <div className="text-center py-8">
-                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">No contracts available at the moment</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {contracts.map((contract, index) => (
-                          <Card key={index} className="border-2">
-                            <CardHeader>
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-lg">Contract #{index + 1}</CardTitle>
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  Available
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <p className="text-sm whitespace-pre-wrap">{contract.contractText}</p>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  <span>Start: {formatDate(contract.startDate)}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  <span>End: {formatDate(contract.endDate)}</span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Access Messages */}
-            {!isVerifiedClient && !isVerifiedTransporter && (
-              <Card className="lg:col-span-2">
-                <CardContent className="py-12 text-center">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Verification Required</h3>
-                  <p className="text-muted-foreground mb-4">
-                    You need to be a verified client or transporter to access contracts.
-                  </p>
-                  {!clientInfo && !transporterDetails ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">Register as:</p>
-                      <div className="flex gap-4 justify-center">
-                        <Button asChild variant="outline">
-                          <Link to="/register/client">Client</Link>
-                        </Button>
-                        <Button asChild variant="outline">
-                          <Link to="/register/transporter">Transporter</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Alert className="max-w-md mx-auto">
-                      <AlertDescription>
-                        Your account is pending verification. You'll be able to access contracts once an admin approves your account.
-                        {clientInfo && (
-                          <div className="mt-2">
-                            Current status: <Badge variant="outline" className="ml-2">{clientInfo.verificationStatus}</Badge>
-                          </div>
-                        )}
-                        {transporterDetails && (
-                          <div className="mt-2">
-                            Current status: <Badge variant="outline" className="ml-2">{transporterDetails.verificationStatus}</Badge>
-                          </div>
-                        )}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         )}
-      </div>
-    </>
+
+        <TabsContent value="browse">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>Available Contracts</CardTitle>
+                  <CardDescription>
+                    {isVerifiedTransporter
+                      ? 'Browse contracts from verified clients'
+                      : 'Only verified transporters can view contracts'}
+                  </CardDescription>
+                </div>
+                {isVerifiedTransporter && contracts.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="yearFilter" className="text-sm">Filter by year:</Label>
+                    <Select value={yearFilter} onValueChange={setYearFilter}>
+                      <SelectTrigger id="yearFilter" className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Years</SelectItem>
+                        {Array.from(new Set(contracts.map(c => c.year.toString()))).sort((a, b) => Number(b) - Number(a)).map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!isVerifiedTransporter ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    You must be a verified transporter to view contracts. Please complete your registration and wait for verification.
+                  </AlertDescription>
+                </Alert>
+              ) : contractsLoading ? (
+                <p className="text-muted-foreground">Loading contracts...</p>
+              ) : filteredContracts.length === 0 ? (
+                <p className="text-muted-foreground">
+                  {yearFilter === 'all' ? 'No contracts available' : `No contracts available for year ${yearFilter}`}
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {filteredContracts.map((contract, index) => (
+                    <Card key={index} className="border-l-4 border-l-accent">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-accent" />
+                            <CardTitle className="text-lg">Contract {index + 1}</CardTitle>
+                          </div>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {contract.year.toString()}
+                          </Badge>
+                        </div>
+                        <CardDescription>
+                          {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm whitespace-pre-wrap">{contract.contractText}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

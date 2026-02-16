@@ -1,43 +1,210 @@
 {
   "kind": "build_request",
-  "title": "Restore Admin Entry Point in UI",
-  "projectName": "TruckTrack Africa",
+  "title": "Amend Contracts + Year Management and Expand Admin Load Editing Fields",
+  "projectName": "Logistics Admin",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
-      "target": "frontend",
+      "text": "Update the backend data model for Loads so that admins can edit: price, client, assigned transporter, and status (in addition to existing editable fields). This must include updating the Motoko `Load` type and any related create/update/approve APIs so that these fields are persisted and returned to the frontend.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-1"
         ],
         "quotes": [
-          "how do I access admin",
-          "ok do it"
+          "Amend contracts and years. The editable should be price, plus client, plus transporter, plus status. Now build."
         ]
       },
       "acceptanceCriteria": [
-        "Top navigation includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\" on desktop.",
-        "Mobile navigation includes the same \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
-        "Footer Quick Links includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
-        "The existing admin routes remain unchanged: \"/admin\" continues to be protected and \"/admin/login\" remains the login entry point."
+        "Backend candid types expose load fields for price, client, assigned transporter, and status.",
+        "Admin can update load price, client principal, assigned transporter principal, and status via an update API without traps (assuming valid inputs).",
+        "Existing load update authorization remains: only admin or owner can update; only admin can change client/assigned transporter/status if owner restrictions apply."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add backend admin query support for approved loads with stable identifiers by implementing an API that returns approved loads together with their real load IDs (e.g., `[(Text, Load)]`), to avoid frontend pseudo-IDs for approved loads.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "The editable should be price, plus client, plus transporter, plus status. Now build."
+        ]
+      },
+      "acceptanceCriteria": [
+        "There is a backend method to fetch approved loads with their IDs (tuple form).",
+        "Admin dashboard can display approved loads and open a details dialog using the real loadId that works with update/delete/assign APIs."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Implement backend “Years” management as an admin-controlled list of years, including APIs to list years (public/authenticated as appropriate), and admin-only APIs to add and remove years. Years must be stored persistently in canister state.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Amend contracts and years."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes an API to list configured years.",
+        "Backend exposes admin-only APIs to add a year and remove a year.",
+        "Year list persists across canister upgrades according to the project’s migration policy."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Amend the Contracts data model and related backend APIs to support associating contracts with a year (selected from the managed year list). Ensure posting and querying contracts includes this year field.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Amend contracts and years."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Contract type includes a year field and it is returned in `getContracts` results.",
+        "Posting a contract requires a year value (or uses an explicit backend default if the frontend does not provide one).",
+        "Contracts can be filtered or grouped by year on the frontend using returned year values."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Update the Admin Load Details dialog UI so that the editable fields are exactly: price, client, transporter, and status (while still allowing view-only display of other load fields such as description/weight/locations/truck type). The dialog must save these edited fields through existing React Query mutations (extended as needed).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "The editable should be price, plus client, plus transporter, plus status."
+        ]
+      },
+      "acceptanceCriteria": [
+        "AdminLoadDetailsDialog presents inputs/controls for price, client, transporter, and status.",
+        "Changing transporter uses a controlled selection that results in the load being updated/assigned correctly in backend state.",
+        "Saving updates persists the edited fields and refreshes admin queries so the dashboard reflects the changes."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Update the Admin Dashboard approved loads tab to use the backend “approved loads with IDs” API instead of generating pseudo-IDs, and ensure the details dialog actions (update/delete/assign) work for approved loads.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Now build."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Approved loads table uses real load IDs from the backend.",
+        "Opening an approved load details dialog and clicking Save/Delete works and affects the correct load record."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Add an Admin UI section for managing Years (list years, add year, remove year). Place it in the Admin Dashboard as a new tab or a clearly labeled section consistent with existing admin UI patterns.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Amend contracts and years."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin can view the current year list.",
+        "Admin can add a new year and see it appear without manual refresh.",
+        "Admin can remove a year and see it removed without manual refresh."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Amend the Contracts page UI so that posting a contract includes selecting a year from the backend-managed year list, and browsing contracts displays the associated year (and optionally provides a year filter).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Amend contracts and years."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Contracts posting form includes a Year selector populated from backend years.",
+        "A posted contract includes the selected year and displays it in the contracts list.",
+        "If no years exist, the UI provides a clear English message explaining that an admin must add years first (or disables posting until years exist)."
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "text": "Ensure any required canister-state migration is implemented (only if needed) so existing stored clients/transporters/loads/contracts remain usable after introducing the new Load fields and Contract year field.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Now build."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upgrade does not trap due to incompatible stored types.",
+        "Pre-existing records remain readable after upgrade; new fields are assigned safe defaults where necessary."
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "text": "Apply a cohesive, creative visual theme across the new/modified admin and contracts UI (colors, typography, spacing) consistent with Tailwind/Shadcn components, without changing app functionality. Avoid blue/purple as the primary palette.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Now build."
+        ]
+      },
+      "acceptanceCriteria": [
+        "New UI elements (Years management, year selector, updated load fields) match a consistent theme and spacing.",
+        "Theme avoids blue/purple as the primary palette (unless already dominant in existing styles)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Do not modify frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
-    "Keep backend as a single Motoko actor in backend/main.mo; do not introduce additional canisters/services."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not edit files under `frontend/src/components/ui` or other `frontend.immutablePaths`; compose existing components instead.",
+    "Use English for all user-facing UI text.",
+    "Preserve existing authorization rules: admin-only operations stay admin-only; owner/verified restrictions remain unless explicitly required."
   ],
   "nonGoals": [
-    "Redesigning or rebuilding the Admin Dashboard features/tabs (they already exist).",
-    "Changing the admin authentication mechanism or credentials.",
-    "Adding third-party authentication providers."
+    "Implementing third-party authentication providers (only existing auth mechanisms apply).",
+    "Adding real-time features (WebSockets/chat/push notifications).",
+    "Introducing external databases or non-Internet-Computer storage.",
+    "Redesigning unrelated pages beyond what is necessary for contracts/year and admin load editing changes."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

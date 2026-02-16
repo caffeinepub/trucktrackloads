@@ -34,6 +34,22 @@ export function useGetAllContactMessages() {
   });
 }
 
+export function useDeleteContactMessage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (principal: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      // Backend doesn't have deleteContactMessage yet, will be added
+      throw new Error('Delete contact message not yet implemented in backend');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contactMessages'] });
+    },
+  });
+}
+
 // Admin verification
 export function useIsCallerAdmin() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -83,6 +99,41 @@ export function useRegisterClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
+      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ['allClientsWithIds'] });
+    },
+  });
+}
+
+export function useUpdateClient() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ client, clientInfo }: { client: Principal; clientInfo: ClientInfo }) => {
+      if (!actor) throw new Error('Actor not available');
+      // Backend doesn't have updateClient yet, will be added
+      throw new Error('Update client not yet implemented in backend');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
+      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ['allClientsWithIds'] });
+    },
+  });
+}
+
+export function useDeleteClient() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (client: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      // Backend doesn't have deleteClient yet, will be added
+      throw new Error('Delete client not yet implemented in backend');
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allClients'] });
       queryClient.invalidateQueries({ queryKey: ['allClientsWithIds'] });
     },
@@ -160,6 +211,43 @@ export function useRegisterTransporter() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transporters'] });
       queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransportersWithIds'] });
+    },
+  });
+}
+
+export function useUpdateTransporter() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transporter, details }: { transporter: Principal; details: TransporterDetails }) => {
+      if (!actor) throw new Error('Actor not available');
+      // Backend doesn't have updateTransporter yet, will be added
+      throw new Error('Update transporter not yet implemented in backend');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
+      queryClient.invalidateQueries({ queryKey: ['transporters'] });
+      queryClient.invalidateQueries({ queryKey: ['transportersWithLocations'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransportersWithIds'] });
+    },
+  });
+}
+
+export function useDeleteTransporter() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (transporter: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      // Backend doesn't have deleteTransporter yet, will be added
+      throw new Error('Delete transporter not yet implemented in backend');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transporters'] });
+      queryClient.invalidateQueries({ queryKey: ['transportersWithLocations'] });
       queryClient.invalidateQueries({ queryKey: ['allTransportersWithIds'] });
     },
   });
@@ -339,6 +427,7 @@ export function useApproveLoad() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
@@ -352,12 +441,18 @@ export function useAssignLoad() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ loadId, transporterId }: { loadId: string; transporterId: Principal }) => {
+    mutationFn: async ({ loadId, transporterId }: { loadId: string; transporterId: Principal | null }) => {
       if (!actor) throw new Error('Actor not available');
+      if (transporterId === null) {
+        // Backend doesn't have unassignLoad yet, will be added
+        throw new Error('Unassign load not yet implemented in backend');
+      }
       return actor.assignLoad(loadId, transporterId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedLoadsWithIds'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['transporterLoads'] });
     },
   });
@@ -374,6 +469,8 @@ export function useUpdateLoad() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedLoadsWithIds'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
       queryClient.invalidateQueries({ queryKey: ['transporterLoads'] });
       queryClient.invalidateQueries({ queryKey: ['transporterLoadBoard'] });
@@ -392,6 +489,7 @@ export function useDeleteLoad() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
@@ -440,33 +538,6 @@ export function useGetTransporterLoadBoard() {
   });
 }
 
-export function useGetAllApprovedLoads() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Load[]>({
-    queryKey: ['approvedLoads'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getAllApprovedLoads();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useGetAllPendingLoads() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Load[]>({
-    queryKey: ['pendingLoads'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getAllPendingLoads();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-// NEW: Get pending loads with their IDs
 export function useGetAllPendingLoadsWithIds() {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -480,7 +551,32 @@ export function useGetAllPendingLoadsWithIds() {
   });
 }
 
-// Tracking
+export function useGetAllApprovedLoadsWithIds() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[string, Load]>>({
+    queryKey: ['approvedLoadsWithIds'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllApprovedLoadsWithIds();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useGetAllApprovedLoads() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Load[]>({
+    queryKey: ['approvedLoads'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllApprovedLoads();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
 export function useGetLoadTracking(loadId: string | null) {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -503,13 +599,13 @@ export function useUpdateLoadTracking() {
       if (!actor) throw new Error('Actor not available');
       return actor.updateLoadTracking(loadId, update);
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['loadTracking', variables.loadId] });
+      queryClient.invalidateQueries({ queryKey: ['transporterLoads'] });
     },
   });
 }
 
-// Truck Types
 export function useGetTruckTypeOptions() {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -536,6 +632,7 @@ export function usePostContract() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['clientContracts'] });
     },
   });
 }
@@ -553,14 +650,71 @@ export function useGetContracts() {
   });
 }
 
-// APK Link
+export function useGetClientContracts(client: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Contract[]>({
+    queryKey: ['clientContracts', client?.toString()],
+    queryFn: async () => {
+      if (!actor || !client) return [];
+      return actor.getClientContracts(client);
+    },
+    enabled: !!actor && !actorFetching && !!client,
+  });
+}
+
+// Years Management
+export function useGetYears() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<bigint[]>({
+    queryKey: ['years'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getYears();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useAddYear() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (year: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addYear(year);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['years'] });
+    },
+  });
+}
+
+export function useDeleteYear() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (year: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteYear(year);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['years'] });
+    },
+  });
+}
+
+// Android APK Link
 export function useGetAndroidApkLink() {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<string | null>({
     queryKey: ['androidApkLink'],
     queryFn: async () => {
-      if (!actor) return null;
+      if (!actor) throw new Error('Actor not available');
       return actor.getAndroidApkLink();
     },
     enabled: !!actor && !actorFetching,

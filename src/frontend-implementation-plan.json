@@ -1,27 +1,118 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Restore Admin Entry Point in Public Navigation (Desktop + Mobile + Footer)",
+  "title": "Admin load field expansion, approved load IDs, and years-based contracts UI",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add an Admin entry point link to the existing /admin/login route in desktop nav, mobile nav, and footer quick links without changing existing admin route protection.",
+      "id": "REQ-5",
+      "summary": "Revise Admin Load Details dialog so only price, client, transporter, and status are editable, while other fields remain view-only; persist changes via React Query mutations.",
       "acceptanceCriteria": [
-        "Top navigation includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\" on desktop.",
-        "Mobile navigation includes the same \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
-        "Footer Quick Links includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
-        "The existing admin routes remain unchanged: \"/admin\" continues to be protected and \"/admin/login\" remains the login entry point."
+        "AdminLoadDetailsDialog presents inputs/controls for price, client, transporter, and status.",
+        "Changing transporter uses a controlled selection that results in the load being updated/assigned correctly in backend state.",
+        "Saving updates persists the edited fields and refreshes admin queries so the dashboard reflects the changes."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/layout/TopNav.tsx",
+          "path": "frontend/src/components/admin/AdminLoadDetailsDialog.tsx",
           "operation": "modify",
-          "description": "Add an \"Admin\" / \"Admin Login\" navigation item that routes to \"/admin/login\" in the desktop nav section, and add the same link to the mobile menu list (ensuring it closes the mobile menu on click). Keep existing admin protection logic unchanged; only restore the public entry point."
+          "description": "Refactor the dialog UI so that editable controls are limited to: price, client, transporter, and status; convert previously editable fields (description, weight, locations, etc.) into view-only display. Wire Save to call the existing load update mutation with updated price/client/assignedTransporter/status (and retain existing delete/approve actions). Ensure query invalidation keeps the admin tables in sync."
         },
         {
-          "path": "frontend/src/components/layout/Footer.tsx",
+          "path": "frontend/src/components/admin/AdminAssignTransporterControl.tsx",
           "operation": "modify",
-          "description": "Add an \"Admin\" / \"Admin Login\" item under the Footer \"Quick Links\" list that navigates to the hash-routed admin login path (\"/#/admin/login\") consistent with existing footer links."
+          "description": "Extend the transporter assignment control to support a controlled selection mode (value + onChange) that can be driven by the parent dialog, while still allowing it to trigger the appropriate mutation flow when saving or on selection change (as required by the updated dialog behavior)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Update Admin Dashboard approved loads tab to use backend-approved-loads-with-IDs query and ensure details actions operate on real load IDs.",
+      "acceptanceCriteria": [
+        "Approved loads table uses real load IDs from the backend.",
+        "Opening an approved load details dialog and clicking Save/Delete works and affects the correct load record."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add/adjust a React Query hook that fetches approved loads with stable IDs using the backend capability that returns tuples (loadId, Load). Ensure cache keys and invalidations align with existing admin load mutations so approved loads refresh after updates/deletes/assignments."
+        },
+        {
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Replace the approved loads tab data source to use the new 'approved loads with IDs' query hook, remove pseudo-ID generation, and pass the real loadId into AdminLoadDetailsDialog so update/delete/assign operations target the correct record."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Add a Years management section in the Admin Dashboard to list, add, and remove years with immediate UI updates.",
+      "acceptanceCriteria": [
+        "Admin can view the current year list.",
+        "Admin can add a new year and see it appear without manual refresh.",
+        "Admin can remove a year and see it removed without manual refresh."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks for Years management: fetch years list, add year, and delete year. Ensure mutations invalidate/refetch the years query so the admin UI updates without manual refresh."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminYearsManagementSection.tsx",
+          "operation": "create",
+          "description": "Create an admin-only Years management section that displays the current list of years, provides an input to add a year, and supports removing a year with confirmation. Compose existing shadcn/ui components (e.g., Card, Table/List, Button, Input, Dialog/Alert) without editing immutable UI component files. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Wire the Years management UI into the Admin Dashboard as a new tab (or clearly labeled section consistent with the existing Tabs layout). Ensure it is only reachable within the existing admin-protected dashboard flow."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Update Contracts UI to select a year from the managed year list when posting, and display year for browsing (with optional filtering and empty-years guidance).",
+      "acceptanceCriteria": [
+        "Contracts posting form includes a Year selector populated from backend years.",
+        "A posted contract includes the selected year and displays it in the contracts list.",
+        "If no years exist, the UI provides a clear English message explaining that an admin must add years first (or disables posting until years exist)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Ensure the contracts posting mutation supports providing the contract 'year' field and that contracts queries expose year values to the UI. Add a years list query hook for non-admin pages to populate selectors/filters, and ensure appropriate caching/invalidation after posting."
+        },
+        {
+          "path": "frontend/src/pages/ContractsPage.tsx",
+          "operation": "modify",
+          "description": "Add a Year selector to the contract posting form populated from the backend-managed years list; disable posting (and show a clear English message) when the years list is empty. Update the browse list to display each contract's year (and optionally add a simple year filter control) using composed shadcn/ui components (e.g., Select, Badge). Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "summary": "Apply a cohesive Tailwind/shadcn-friendly theme update across modified admin and contracts UI, avoiding blue/purple as the primary palette.",
+      "acceptanceCriteria": [
+        "New UI elements (Years management, year selector, updated load fields) match a consistent theme and spacing.",
+        "Theme avoids blue/purple as the primary palette (unless already dominant in existing styles)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Adjust theme CSS variables (primary/accent/ring and related semantic tokens) to a cohesive non-blue/non-purple primary palette (e.g., deep green / amber / slate neutrals) while keeping shadcn/Tailwind token conventions intact. Ensure the updated colors work in both light and dark modes."
+        },
+        {
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Update newly touched admin UI elements to match the refreshed theme (spacing/typography and badge/status colors). Replace any newly introduced primary-looking blue styling (e.g., blue badges) with theme-consistent alternatives."
+        },
+        {
+          "path": "frontend/src/pages/ContractsPage.tsx",
+          "operation": "modify",
+          "description": "Update contracts UI elements impacted by the year selector/filter and year display to use consistent spacing and theme-aligned accent styles, avoiding blue/purple for primary emphasis."
         }
       ]
     }

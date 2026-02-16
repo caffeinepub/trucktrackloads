@@ -1,37 +1,141 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T19:06:22.924Z",
+  "generatedAt": "2026-02-16T22:06:16.507Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 10,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
+        "summary": "Update the backend data model for Loads so that admins can edit: price, client, assigned transporter, and status (in addition to existing editable fields). This must include updating the Motoko `Load` type and any related create/update/approve APIs so that these fields are persisted and returned to the frontend.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-10",
+        "summary": "Apply a cohesive, creative visual theme across the new/modified admin and contracts UI (colors, typography, spacing) consistent with Tailwind/Shadcn components, without changing app functionality. Avoid blue/purple as the primary palette.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/layout/TopNav.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/index.css",
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/pages/ContractsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/layout/TopNav.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/index.css",
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/pages/ContractsPage.tsx"
         ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add backend admin query support for approved loads with stable identifiers by implementing an API that returns approved loads together with their real load IDs (e.g., `[(Text, Load)]`), to avoid frontend pseudo-IDs for approved loads.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement backend “Years” management as an admin-controlled list of years, including APIs to list years (public/authenticated as appropriate), and admin-only APIs to add and remove years. Years must be stored persistently in canister state.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Amend the Contracts data model and related backend APIs to support associating contracts with a year (selected from the managed year list). Ensure posting and querying contracts includes this year field.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Update the Admin Load Details dialog UI so that the editable fields are exactly: price, client, transporter, and status (while still allowing view-only display of other load fields such as description/weight/locations/truck type). The dialog must save these edited fields through existing React Query mutations (extended as needed).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AdminLoadDetailsDialog.tsx",
+          "frontend/src/components/admin/AdminAssignTransporterControl.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AdminLoadDetailsDialog.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Update the Admin Dashboard approved loads tab to use the backend “approved loads with IDs” API instead of generating pseudo-IDs, and ensure the details dialog actions (update/delete/assign) work for approved loads.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-7",
+        "summary": "Add an Admin UI section for managing Years (list years, add year, remove year). Place it in the Admin Dashboard as a new tab or a clearly labeled section consistent with existing admin UI patterns.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminYearsManagementSection.tsx",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminYearsManagementSection.tsx",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-8",
+        "summary": "Amend the Contracts page UI so that posting a contract includes selecting a year from the backend-managed year list, and browsing contracts displays the associated year (and optionally provides a year filter).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/ContractsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/ContractsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-9",
+        "summary": "Ensure any required canister-state migration is implemented (only if needed) so existing stored clients/transporters/loads/contracts remain usable after introducing the new Load fields and Contract year field.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/layout/Footer.tsx",
-    "frontend/src/components/layout/TopNav.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/admin/AdminLoadDetailsDialog.tsx",
+    "frontend/src/components/admin/AdminYearsManagementSection.tsx",
+    "frontend/src/components/auth/AdminContactMessageDetailsDialog.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/pages/AdminDashboardPage.tsx",
+    "frontend/src/pages/ClientRegistrationPage.tsx",
+    "frontend/src/pages/ContractsPage.tsx",
+    "frontend/src/pages/LoadBoardPage.tsx",
+    "frontend/src/pages/TransporterRegistrationPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

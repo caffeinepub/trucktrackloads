@@ -47,6 +47,7 @@ export const LoadConfirmation = IDL.Record({
 });
 export const Load = IDL.Record({
   'weight' : IDL.Float64,
+  'status' : IDL.Text,
   'client' : IDL.Principal,
   'isApproved' : IDL.Bool,
   'description' : IDL.Text,
@@ -55,10 +56,12 @@ export const Load = IDL.Record({
   'tracking' : IDL.Opt(TrackingUpdate),
   'assignedTransporter' : IDL.Opt(IDL.Principal),
   'confirmation' : LoadConfirmation,
+  'price' : IDL.Float64,
   'offloadingLocation' : IDL.Text,
 });
 export const Contract = IDL.Record({
   'endDate' : IDL.Int,
+  'year' : IDL.Nat,
   'contractText' : IDL.Text,
   'startDate' : IDL.Int,
 });
@@ -156,13 +159,20 @@ export const idlService = IDL.Service({
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addLocationEvidence' : IDL.Func([LiveLocation, ExternalBlob], [], []),
+  'addYear' : IDL.Func([IDL.Nat], [], []),
   'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'approveLoad' : IDL.Func([IDL.Text, IDL.Bool], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignLoad' : IDL.Func([IDL.Text, IDL.Principal], [], []),
   'createLoad' : IDL.Func([Load], [IDL.Text], []),
   'deleteLoad' : IDL.Func([IDL.Text], [], []),
+  'deleteYear' : IDL.Func([IDL.Nat], [], []),
   'getAllApprovedLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+  'getAllApprovedLoadsWithIds' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, Load))],
+      ['query'],
+    ),
   'getAllClients' : IDL.Func([], [IDL.Vec(ClientInfo)], ['query']),
   'getAllClientsWithIds' : IDL.Func(
       [],
@@ -245,6 +255,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getYears' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
   'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
@@ -312,6 +323,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const Load = IDL.Record({
     'weight' : IDL.Float64,
+    'status' : IDL.Text,
     'client' : IDL.Principal,
     'isApproved' : IDL.Bool,
     'description' : IDL.Text,
@@ -320,10 +332,12 @@ export const idlFactory = ({ IDL }) => {
     'tracking' : IDL.Opt(TrackingUpdate),
     'assignedTransporter' : IDL.Opt(IDL.Principal),
     'confirmation' : LoadConfirmation,
+    'price' : IDL.Float64,
     'offloadingLocation' : IDL.Text,
   });
   const Contract = IDL.Record({
     'endDate' : IDL.Int,
+    'year' : IDL.Nat,
     'contractText' : IDL.Text,
     'startDate' : IDL.Int,
   });
@@ -421,13 +435,20 @@ export const idlFactory = ({ IDL }) => {
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addLocationEvidence' : IDL.Func([LiveLocation, ExternalBlob], [], []),
+    'addYear' : IDL.Func([IDL.Nat], [], []),
     'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'approveLoad' : IDL.Func([IDL.Text, IDL.Bool], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignLoad' : IDL.Func([IDL.Text, IDL.Principal], [], []),
     'createLoad' : IDL.Func([Load], [IDL.Text], []),
     'deleteLoad' : IDL.Func([IDL.Text], [], []),
+    'deleteYear' : IDL.Func([IDL.Nat], [], []),
     'getAllApprovedLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+    'getAllApprovedLoadsWithIds' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, Load))],
+        ['query'],
+      ),
     'getAllClients' : IDL.Func([], [IDL.Vec(ClientInfo)], ['query']),
     'getAllClientsWithIds' : IDL.Func(
         [],
@@ -522,6 +543,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getYears' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
     'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),

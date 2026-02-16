@@ -1,18 +1,55 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "Admin system for managing logistics data: clients, transporters, loads (pending/approved), and contracts, including year management and load editing (price, client, transporter, status), with no admin-role authentication specified.",
+  "architectural_notes": [
+    "Admin API does not require Internet Identity with an explicit admin role (no admin-role authentication specified).",
+    "Admin data domains: clients, transporters, loads (pending/approved), contracts, and year management.",
+    "Loads require editable fields: price, client, transporter, status; pending and approved loads should be separate admin pages."
+  ],
   "known_issues": [
-    "Previous build attempt did not complete due to an AI/build error."
+    "Production deployment previously failed with a deployment error.",
+    "Build attempt previously failed with 'AI was unable to fulfill your request' (may require prompt simplification or build pipeline adjustment)."
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-an-admin-entry-point-back-into-the-public-ui-so-the-admin-area-can-be-accessed-again-link-to-the-existing-admin-login-route-and-ensure-it-is-available-on-both-desktop-and-mobile-navigation",
-      "title": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
+      "id": "feature-update-the-admin-load-details-dialog-ui-so-that-the-editable-fields-are-exactly-price-client-transporter-and-status-while-still-allowing-view-only-display-of-other-load-fields-such-as-description-weight-locations-truck-type-the-dialog-must-save-these-edited-fields-through-existing-react-query-mutations-extended-as-needed",
+      "title": "Update the Admin Load Details dialog UI so that the editable fields are exactly: price, client, transporter, and status (while still allowing view-only display of other load fields such as description/weight/locations/truck type). The dialog must save these edited fields through existing React Query mutations (extended as needed).",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-dashboard-approved-loads-tab-to-use-the-backend-approved-loads-with-ids-api-instead-of-generating-pseudo-ids-and-ensure-the-details-dialog-actions-update-delete-assign-work-for-approved-loads",
+      "title": "Update the Admin Dashboard approved loads tab to use the backend “approved loads with IDs” API instead of generating pseudo-IDs, and ensure the details dialog actions (update/delete/assign) work for approved loads.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-admin-ui-section-for-managing-years-list-years-add-year-remove-year-place-it-in-the-admin-dashboard-as-a-new-tab-or-a-clearly-labeled-section-consistent-with-existing-admin-ui-patterns",
+      "title": "Add an Admin UI section for managing Years (list years, add year, remove year). Place it in the Admin Dashboard as a new tab or a clearly labeled section consistent with existing admin UI patterns.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-amend-the-contracts-page-ui-so-that-posting-a-contract-includes-selecting-a-year-from-the-backend-managed-year-list-and-browsing-contracts-displays-the-associated-year-and-optionally-provides-a-year-filter",
+      "title": "Amend the Contracts page UI so that posting a contract includes selecting a year from the backend-managed year list, and browsing contracts displays the associated year (and optionally provides a year filter).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-cohesive-creative-visual-theme-across-the-new-modified-admin-and-contracts-ui-colors-typography-spacing-consistent-with-tailwind-shadcn-components-without-changing-app-functionality-avoid-blue-purple-as-the-primary-palette",
+      "title": "Apply a cohesive, creative visual theme across the new/modified admin and contracts UI (colors, typography, spacing) consistent with Tailwind/Shadcn components, without changing app functionality. Avoid blue/purple as the primary palette.",
+      "reqIds": [
+        "REQ-10"
       ],
       "version": 1
     }
@@ -20,18 +57,52 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add an admin area/screen back into the app (admin access / restricted settings page)",
+      "summary": "Build admin UI + backend APIs to create/edit/delete clients, transporters, loads, and contracts; provide separate pages for pending vs approved loads; allow editing load fields (price, client, transporter, status); include year management; no admin-role authentication required.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add an Android download link for the built app",
-      "reqIds": [],
+      "summary": "Update the backend data model for Loads so that admins can edit: price, client, assigned transporter, and status (in addition to existing editable fields). This must include updating the Motoko `Load` type and any related create/update/approve APIs so that these fields are persisted and returned to the frontend.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add backend admin query support for approved loads with stable identifiers by implementing an API that returns approved loads together with their real load IDs (e.g., `[(Text, Load)]`), to avoid frontend pseudo-IDs for approved loads.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Implement backend “Years” management as an admin-controlled list of years, including APIs to list years (public/authenticated as appropriate), and admin-only APIs to add and remove years. Years must be stored persistently in canister state.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Amend the Contracts data model and related backend APIs to support associating contracts with a year (selected from the managed year list). Ensure posting and querying contracts includes this year field.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Ensure any required canister-state migration is implemented (only if needed) so existing stored clients/transporters/loads/contracts remain usable after introducing the new Load fields and Contract year field.",
+      "reqIds": [
+        "REQ-9"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "TruckTrack Africa",
+  "projectName": "Logistics Admin",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

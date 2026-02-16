@@ -32,6 +32,7 @@ export interface ContactInfo {
 }
 export interface Contract {
   'endDate' : bigint,
+  'year' : bigint,
   'contractText' : string,
   'startDate' : bigint,
 }
@@ -44,6 +45,7 @@ export interface LiveLocation {
 }
 export interface Load {
   'weight' : number,
+  'status' : string,
   'client' : Principal,
   'isApproved' : boolean,
   'description' : string,
@@ -52,6 +54,7 @@ export interface Load {
   'tracking' : [] | [TrackingUpdate],
   'assignedTransporter' : [] | [Principal],
   'confirmation' : LoadConfirmation,
+  'price' : number,
   'offloadingLocation' : string,
 }
 export interface LoadConfirmation {
@@ -136,13 +139,16 @@ export interface _SERVICE {
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addLocationEvidence' : ActorMethod<[LiveLocation, ExternalBlob], undefined>,
+  'addYear' : ActorMethod<[bigint], undefined>,
   'adminLogin' : ActorMethod<[string, string], string>,
   'approveLoad' : ActorMethod<[string, boolean], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignLoad' : ActorMethod<[string, Principal], undefined>,
   'createLoad' : ActorMethod<[Load], string>,
   'deleteLoad' : ActorMethod<[string], undefined>,
+  'deleteYear' : ActorMethod<[bigint], undefined>,
   'getAllApprovedLoads' : ActorMethod<[], Array<Load>>,
+  'getAllApprovedLoadsWithIds' : ActorMethod<[], Array<[string, Load]>>,
   'getAllClients' : ActorMethod<[], Array<ClientInfo>>,
   'getAllClientsWithIds' : ActorMethod<[], Array<[Principal, ClientInfo]>>,
   'getAllContactMessages' : ActorMethod<[], Array<[Principal, ContactInfo]>>,
@@ -178,6 +184,7 @@ export interface _SERVICE {
   'getTransporterStatus' : ActorMethod<[Principal], [] | [TransporterStatus]>,
   'getTruckTypeOptions' : ActorMethod<[], Array<TruckTypeOption>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getYears' : ActorMethod<[], Array<bigint>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,

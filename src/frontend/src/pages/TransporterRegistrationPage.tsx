@@ -4,23 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useRegisterTransporter, useGetCallerTransporterDetails, useGetTruckTypeOptions } from '@/hooks/useQueries';
 import { toast } from 'sonner';
-import { Loader2, Building2, User, Mail, Phone, MapPin, FileText, Upload, AlertCircle, CheckCircle, Truck } from 'lucide-react';
+import { Loader2, Building2, User, Mail, Phone, MapPin, FileText, Truck, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import ProfileSetupModal from '@/components/auth/ProfileSetupModal';
-import { ExternalBlob, ClientVerificationStatus, TruckType } from '../backend';
+import { ClientVerificationStatus, TruckType, ExternalBlob } from '../backend';
 import { Link } from '@tanstack/react-router';
 import LiveLocationToggleCard from '@/components/transporter/LiveLocationToggleCard';
 import TransporterStatusCard from '@/components/transporter/TransporterStatusCard';
 
+// TransporterVerificationStatus has the same shape as ClientVerificationStatus
+type TransporterVerificationStatus = ClientVerificationStatus;
+const TransporterVerificationStatus = ClientVerificationStatus;
+
 export default function TransporterRegistrationPage() {
   const { isAuthenticated, showProfileSetup } = useAuth();
   const { data: existingDetails, isLoading: detailsLoading } = useGetCallerTransporterDetails();
-  const { data: truckTypeOptions = [], isLoading: truckTypesLoading } = useGetTruckTypeOptions();
+  const { data: truckTypeOptions = [] } = useGetTruckTypeOptions();
   const registerTransporter = useRegisterTransporter();
 
   const [company, setCompany] = useState('');
@@ -28,12 +32,11 @@ export default function TransporterRegistrationPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [truckType, setTruckType] = useState<TruckType | ''>('');
   const [contractDetails, setContractDetails] = useState('');
   const [contractStartDate, setContractStartDate] = useState('');
   const [contractEndDate, setContractEndDate] = useState('');
   const [documents, setDocuments] = useState<ExternalBlob[]>([]);
-  const [selectedTruckType, setSelectedTruckType] = useState<TruckType | ''>('');
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (existingDetails) {
@@ -42,7 +45,7 @@ export default function TransporterRegistrationPage() {
       setEmail(existingDetails.email);
       setPhone(existingDetails.phone);
       setAddress(existingDetails.address);
-      setSelectedTruckType(existingDetails.truckType);
+      setTruckType(existingDetails.truckType);
       setDocuments(existingDetails.documents);
       // Load first contract if exists
       if (existingDetails.contracts.length > 0) {
@@ -50,22 +53,6 @@ export default function TransporterRegistrationPage() {
       }
     }
   }, [existingDetails]);
-
-  const handleFileUpload = async (file: File) => {
-    setIsUploading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const blob = ExternalBlob.fromBytes(uint8Array);
-      setDocuments((prev) => [...prev, blob]);
-      toast.success('Document uploaded successfully');
-    } catch (error) {
-      toast.error('Failed to upload document');
-      console.error(error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +62,7 @@ export default function TransporterRegistrationPage() {
       return;
     }
 
-    if (!company.trim() || !contactPerson.trim() || !email.trim() || !phone.trim() || !address.trim() || !selectedTruckType) {
+    if (!company.trim() || !contactPerson.trim() || !email.trim() || !phone.trim() || !address.trim() || !truckType) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -90,14 +77,15 @@ export default function TransporterRegistrationPage() {
         email: email.trim(),
         phone: phone.trim(),
         address: address.trim(),
-        documents,
+        truckType: truckType as TruckType,
+        documents: documents,
         contracts: contractDetails.trim() ? [{
           contractText: contractDetails.trim(),
           startDate: BigInt(startTimestamp),
           endDate: BigInt(endTimestamp),
+          year: BigInt(0), // Default year for legacy contracts
         }] : [],
-        verificationStatus: ClientVerificationStatus.pending,
-        truckType: selectedTruckType as TruckType,
+        verificationStatus: TransporterVerificationStatus.pending,
       });
       toast.success('Transporter registration submitted successfully! Awaiting admin verification.');
     } catch (error: any) {
@@ -107,10 +95,30 @@ export default function TransporterRegistrationPage() {
     }
   };
 
-  // TransporterVerificationStatus has the same enum values as ClientVerificationStatus
-  const isVerified = existingDetails?.verificationStatus === ClientVerificationStatus.verified;
-  const isPending = existingDetails?.verificationStatus === ClientVerificationStatus.pending;
-  const isRejected = existingDetails?.verificationStatus === ClientVerificationStatus.rejected;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const newDocuments: ExternalBlob[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const blob = ExternalBlob.fromBytes(uint8Array);
+        newDocuments.push(blob);
+      }
+      setDocuments([...documents, ...newDocuments]);
+      toast.success(`${newDocuments.length} document(s) added`);
+    } catch (error: any) {
+      toast.error('Failed to upload documents');
+      console.error(error);
+    }
+  };
+
+  const isVerified = existingDetails?.verificationStatus === TransporterVerificationStatus.verified;
+  const isPending = existingDetails?.verificationStatus === TransporterVerificationStatus.pending;
+  const isRejected = existingDetails?.verificationStatus === TransporterVerificationStatus.rejected;
 
   return (
     <>
@@ -120,7 +128,7 @@ export default function TransporterRegistrationPage() {
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl md:text-5xl font-semibold mb-3">Transporter Registration</h1>
-            <p className="text-muted-foreground">Register your transport company to access available loads</p>
+            <p className="text-muted-foreground">Register your transport company to access loads and contracts</p>
           </div>
 
           {!isAuthenticated ? (
@@ -166,8 +174,9 @@ export default function TransporterRegistrationPage() {
                     <Alert className="bg-green-50 border-green-200">
                       <CheckCircle className="h-4 w-4 text-green-700" />
                       <AlertDescription className="text-green-700">
-                        Your transporter account has been verified! You can now browse available loads on the{' '}
-                        <Link to="/load-board" className="underline font-medium">Load Board</Link>.
+                        Your transporter account has been verified! You can now access the{' '}
+                        <Link to="/load-board" className="underline font-medium">Load Board</Link> and{' '}
+                        <Link to="/contracts" className="underline font-medium">Contracts</Link>.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -218,12 +227,8 @@ export default function TransporterRegistrationPage() {
                     <div>
                       <Label className="text-muted-foreground">Truck Type</Label>
                       <p className="font-medium">
-                        {truckTypeOptions.find(opt => opt.truckType === existingDetails.truckType)?.name || existingDetails.truckType}
+                        {truckTypeOptions.find(opt => opt.truckType === existingDetails.truckType)?.name || String(existingDetails.truckType)}
                       </p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground">Documents Uploaded</Label>
-                      <p className="font-medium">{existingDetails.documents.length} file(s)</p>
                     </div>
                   </div>
                 </CardContent>
@@ -240,7 +245,7 @@ export default function TransporterRegistrationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Register as Transporter</CardTitle>
-                <CardDescription>Fill in your transport company details to get started</CardDescription>
+                <CardDescription>Fill in your company details to get started</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -251,7 +256,7 @@ export default function TransporterRegistrationPage() {
                     </Label>
                     <Input
                       id="company"
-                      placeholder="e.g., XYZ Transport Services"
+                      placeholder="e.g., XYZ Transport Ltd"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                     />
@@ -278,7 +283,7 @@ export default function TransporterRegistrationPage() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="contact@transport.com"
+                      placeholder="contact@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -292,7 +297,7 @@ export default function TransporterRegistrationPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+27 12 345 6789"
+                      placeholder="+27 XX XXX XXXX"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -305,7 +310,7 @@ export default function TransporterRegistrationPage() {
                     </Label>
                     <Textarea
                       id="address"
-                      placeholder="Full business address including city and country"
+                      placeholder="Full business address"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       rows={3}
@@ -317,20 +322,16 @@ export default function TransporterRegistrationPage() {
                       <Truck className="inline h-4 w-4 mr-2" />
                       Truck Type *
                     </Label>
-                    <Select value={selectedTruckType} onValueChange={(value) => setSelectedTruckType(value as TruckType)}>
+                    <Select value={truckType} onValueChange={(value) => setTruckType(value as TruckType)}>
                       <SelectTrigger id="truck-type">
-                        <SelectValue placeholder="Select your truck type" />
+                        <SelectValue placeholder="Select truck type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {truckTypesLoading ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                        ) : (
-                          truckTypeOptions.map((option) => (
-                            <SelectItem key={option.id.toString()} value={option.truckType}>
-                              {option.name}
-                            </SelectItem>
-                          ))
-                        )}
+                        {truckTypeOptions.map((option) => (
+                          <SelectItem key={option.id.toString()} value={option.truckType}>
+                            {option.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -338,16 +339,14 @@ export default function TransporterRegistrationPage() {
                   <div className="space-y-2">
                     <Label htmlFor="documents">
                       <Upload className="inline h-4 w-4 mr-2" />
-                      Upload Documents (optional)
+                      Upload Documents (Optional)
                     </Label>
                     <Input
                       id="documents"
                       type="file"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file);
-                      }}
-                      disabled={isUploading}
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileUpload}
                     />
                     {documents.length > 0 && (
                       <p className="text-sm text-muted-foreground">
@@ -359,11 +358,11 @@ export default function TransporterRegistrationPage() {
                   <div className="space-y-2">
                     <Label htmlFor="contract-details">
                       <FileText className="inline h-4 w-4 mr-2" />
-                      Contract Details (optional)
+                      Contract Details (Optional)
                     </Label>
                     <Textarea
                       id="contract-details"
-                      placeholder="Any existing contract terms or special requirements"
+                      placeholder="Enter any existing contract details or requirements"
                       value={contractDetails}
                       onChange={(e) => setContractDetails(e.target.value)}
                       rows={4}
@@ -371,7 +370,7 @@ export default function TransporterRegistrationPage() {
                   </div>
 
                   {contractDetails.trim() && (
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="contract-start">Contract Start Date</Label>
                         <Input
@@ -393,20 +392,20 @@ export default function TransporterRegistrationPage() {
                     </div>
                   )}
 
-                  <Button type="submit" disabled={registerTransporter.isPending || isUploading} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={registerTransporter.isPending}
+                    className="w-full"
+                  >
                     {registerTransporter.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting Registration...
+                        Submitting...
                       </>
                     ) : (
                       'Submit Registration'
                     )}
                   </Button>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    * Required fields. Your registration will be reviewed by an admin before approval.
-                  </p>
                 </form>
               </CardContent>
             </Card>

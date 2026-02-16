@@ -69,6 +69,7 @@ export default function ClientRegistrationPage() {
           contractText: contractDetails.trim(),
           startDate: BigInt(startTimestamp),
           endDate: BigInt(endTimestamp),
+          year: BigInt(0), // Default year for legacy contracts
         }] : [],
         verificationStatus: ClientVerificationStatus.pending,
       });
@@ -245,7 +246,7 @@ export default function ClientRegistrationPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+27 12 345 6789"
+                      placeholder="+27 XX XXX XXXX"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -258,7 +259,7 @@ export default function ClientRegistrationPage() {
                     </Label>
                     <Textarea
                       id="address"
-                      placeholder="Full business address including city and country"
+                      placeholder="Full business address"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       rows={3}
@@ -268,11 +269,11 @@ export default function ClientRegistrationPage() {
                   <div className="space-y-2">
                     <Label htmlFor="contract-details">
                       <FileText className="inline h-4 w-4 mr-2" />
-                      Contract Details (optional)
+                      Contract Details (Optional)
                     </Label>
                     <Textarea
                       id="contract-details"
-                      placeholder="Any existing contract terms or special requirements"
+                      placeholder="Enter any existing contract details or requirements"
                       value={contractDetails}
                       onChange={(e) => setContractDetails(e.target.value)}
                       rows={4}
@@ -280,7 +281,7 @@ export default function ClientRegistrationPage() {
                   </div>
 
                   {contractDetails.trim() && (
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="contract-start">Contract Start Date</Label>
                         <Input
@@ -302,20 +303,20 @@ export default function ClientRegistrationPage() {
                     </div>
                   )}
 
-                  <Button type="submit" disabled={registerClient.isPending} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={registerClient.isPending}
+                    className="w-full"
+                  >
                     {registerClient.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting Registration...
+                        Submitting...
                       </>
                     ) : (
                       'Submit Registration'
                     )}
                   </Button>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    * Required fields. Your registration will be reviewed by an admin before approval.
-                  </p>
                 </form>
               </CardContent>
             </Card>

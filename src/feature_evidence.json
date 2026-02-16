@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-an-admin-entry-point-back-into-the-public-ui-so-the-admin-area-can-be-accessed-again-link-to-the-existing-admin-login-route-and-ensure-it-is-available-on-both-desktop-and-mobile-navigation",
-      "featureTitle": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
+      "featureId": "feature-update-the-admin-load-details-dialog-ui-so-that-the-editable-fields-are-exactly-price-client-transporter-and-status-while-still-allowing-view-only-display-of-other-load-fields-such-as-description-weight-locations-truck-type-the-dialog-must-save-these-edited-fields-through-existing-react-query-mutations-extended-as-needed",
+      "featureTitle": "Update the Admin Load Details dialog UI so that the editable fields are exactly: price, client, transporter, and status (while still allowing view-only display of other load fields such as description/weight/locations/truck type). The dialog must save these edited fields through existing React Query mutations (extended as needed).",
       "files": [
-        "frontend/src/components/layout/Footer.tsx",
-        "frontend/src/components/layout/TopNav.tsx"
+        "frontend/src/components/admin/AdminLoadDetailsDialog.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -19,7 +18,97 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-admin-dashboard-approved-loads-tab-to-use-the-backend-approved-loads-with-ids-api-instead-of-generating-pseudo-ids-and-ensure-the-details-dialog-actions-update-delete-assign-work-for-approved-loads",
+      "featureTitle": "Update the Admin Dashboard approved loads tab to use the backend “approved loads with IDs” API instead of generating pseudo-IDs, and ensure the details dialog actions (update/delete/assign) work for approved loads.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-admin-ui-section-for-managing-years-list-years-add-year-remove-year-place-it-in-the-admin-dashboard-as-a-new-tab-or-a-clearly-labeled-section-consistent-with-existing-admin-ui-patterns",
+      "featureTitle": "Add an Admin UI section for managing Years (list years, add year, remove year). Place it in the Admin Dashboard as a new tab or a clearly labeled section consistent with existing admin UI patterns.",
+      "files": [
+        "frontend/src/components/admin/AdminYearsManagementSection.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-amend-the-contracts-page-ui-so-that-posting-a-contract-includes-selecting-a-year-from-the-backend-managed-year-list-and-browsing-contracts-displays-the-associated-year-and-optionally-provides-a-year-filter",
+      "featureTitle": "Amend the Contracts page UI so that posting a contract includes selecting a year from the backend-managed year list, and browsing contracts displays the associated year (and optionally provides a year filter).",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/ContractsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-a-cohesive-creative-visual-theme-across-the-new-modified-admin-and-contracts-ui-colors-typography-spacing-consistent-with-tailwind-shadcn-components-without-changing-app-functionality-avoid-blue-purple-as-the-primary-palette",
+      "featureTitle": "Apply a cohesive, creative visual theme across the new/modified admin and contracts UI (colors, typography, spacing) consistent with Tailwind/Shadcn components, without changing app functionality. Avoid blue/purple as the primary palette.",
+      "files": [
+        "frontend/src/index.css",
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/pages/ContractsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-10"
       ],
       "confidence": "high"
     }
