@@ -1,0 +1,113 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-add-democratic-republic-of-congo-to-every-public-facing-coverage-areas-countries-we-provide-services-list-including-about-page-services-page-and-footer-coverage-text-while-keeping-the-existing-layout-and-styling-consistent",
+      "featureTitle": "Add “Democratic Republic of Congo” to every public-facing “Coverage Areas / countries we provide services” list (including About page, Services page, and Footer coverage text) while keeping the existing layout and styling consistent.",
+      "files": [
+        "frontend/src/components/layout/Footer.tsx",
+        "frontend/src/pages/AboutPage.tsx",
+        "frontend/src/pages/ServicesPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-38"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-client-registration-and-transporter-registration-forms-to-capture-contract-details-english-label-and-persist-it-to-the-backend-without-changing-existing-required-fields-or-the-document-upload-requirements",
+      "featureTitle": "Update the Client Registration and Transporter Registration forms to capture “Contract Details” (English label) and persist it to the backend, without changing existing required fields or the document upload requirements.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/ClientRegistrationPage.tsx",
+        "frontend/src/pages/TransporterRegistrationPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-40"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-spreadsheet-style-tables-to-the-admin-dashboard-to-view-all-registered-transporters-and-all-registered-clients-including-contract-details-and-provide-a-csv-export-download-action-for-each-table",
+      "featureTitle": "Add spreadsheet-style tables to the Admin Dashboard to view all registered Transporters and all registered Clients, including contract details, and provide a CSV export/download action for each table.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/utils/csv.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-41"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-admin-configurable-android-apk-download-link-setting-stored-in-the-backend-and-display-it-prominently-on-the-admin-dashboard-as-a-clickable-download-link",
+      "featureTitle": "Add an admin-configurable Android APK download link setting stored in the backend, and display it prominently on the Admin Dashboard as a clickable download link.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-42"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-standardize-load-weight-entry-and-display-to-tonnage-tons-across-the-load-board-and-admin-dashboard-update-labels-input-hints-and-rendered-units-so-users-see-and-enter-weight-in-tons-instead-of-kilograms",
+      "featureTitle": "Standardize load weight entry and display to tonnage (tons) across the Load Board and Admin Dashboard: update labels, input hints, and rendered units so users see and enter weight in tons instead of kilograms.",
+      "files": [
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/pages/LoadBoardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-43"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "kind": "build_request",
+  "title": "Add DRC coverage, admin spreadsheet listings for clients/transporters (with contract details), APK download link, and tonnage weight units",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-38",
+      "text": "Add “Democratic Republic of Congo” to every public-facing “Coverage Areas / countries we provide services” list (including About page, Services page, and Footer coverage text) while keeping the existing layout and styling consistent.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Counties that we provide services add democratic Republic of Congo ."
+        ]
+      },
+      "acceptanceCriteria": [
+        "About page regional coverage list includes “Democratic Republic of Congo”.",
+        "Services page “Coverage Areas” list includes “Democratic Republic of Congo”.",
+        "Footer “Coverage Areas” line includes “Democratic Republic of Congo”.",
+        "No other country names are removed or renamed."
+      ]
+    },
+    {
+      "id": "REQ-39",
+      "text": "Extend Client and Transporter profiles to store admin-viewable contract details, and add the necessary backend admin-only query methods to retrieve spreadsheet-ready listings for all registered Clients and Transporters (including their contract details).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Have a list of spreadsheet transporters that have signed in including their contract details also for clients this should be on admin page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend data models for client info and transporter details include a contract details field that can be saved from the corresponding registration flows.",
+        "Admin-only backend query exists to list all clients with their stored fields (including contract details) in a single call suitable for a table/spreadsheet view.",
+        "Admin-only backend query exists to list all transporters with their stored fields (including contract details) in a single call suitable for a table/spreadsheet view.",
+        "Non-admin callers cannot access the new admin listing methods (authorization enforced consistently with existing admin checks)."
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "text": "Update the Client Registration and Transporter Registration forms to capture “Contract Details” (English label) and persist it to the backend, without changing existing required fields or the document upload requirements.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Have a list of spreadsheet transporters that have signed in including their contract details also for clients this should be on admin page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Client Registration page includes a “Contract Details” input (appropriate multi-line control) and saves it with the rest of the client profile.",
+        "Transporter Registration page includes a “Contract Details” input (appropriate multi-line control) and saves it with the rest of the transporter profile.",
+        "Existing validation for required fields and transporter required documents remains intact.",
+        "Revisiting the registration pages shows the previously saved contract details (where applicable)."
+      ]
+    },
+    {
+      "id": "REQ-41",
+      "text": "Add spreadsheet-style tables to the Admin Dashboard to view all registered Transporters and all registered Clients, including contract details, and provide a CSV export/download action for each table.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Have a list of spreadsheet transporters that have signed in including their contract details also for clients this should be on admin page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin Dashboard includes a Clients section/tab that displays all clients in a table with clear column headers (including Contract Details).",
+        "Admin Dashboard Transporters section is updated from card list to a table (or adds a table view) that includes Contract Details and existing transporter fields.",
+        "Each table includes an “Export CSV” (or equivalent) action that downloads a CSV file containing the rows currently shown.",
+        "The admin tables load using admin-only backend APIs and show a loading state and an empty state when there is no data."
+      ]
+    },
+    {
+      "id": "REQ-42",
+      "text": "Add an admin-configurable Android APK download link setting stored in the backend, and display it prominently on the Admin Dashboard as a clickable download link.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "include the APK download link in the admin page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend provides admin-only methods to get and set the APK download URL (stored persistently in canister state).",
+        "Admin Dashboard displays a clearly labeled “APK Download” section with a clickable link when a URL is configured.",
+        "Admin Dashboard provides an admin-only UI control to set/update the APK download URL and save it successfully.",
+        "If the APK URL is not configured, Admin Dashboard shows an English empty-state message indicating no APK link is set yet."
+      ]
+    },
+    {
+      "id": "REQ-43",
+      "text": "Standardize load weight entry and display to tonnage (tons) across the Load Board and Admin Dashboard: update labels, input hints, and rendered units so users see and enter weight in tons instead of kilograms.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "include the APK download link in the admin page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Load Board “Post a Load” form weight label and placeholder reference tons/tonnage (not kg).",
+        "Approved loads list and “My Loads” list display weight in tons/tonnage (not kg).",
+        "Admin Dashboard load cards display weight in tons/tonnage (not kg).",
+        "Validation still prevents non-numeric or non-positive weights."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or any files under frontend/src/components/ui; compose using these components instead.",
+    "All admin-only data access must be enforced in backend methods (not only hidden in UI)."
+  ],
+  "nonGoals": [
+    "Implementing real-time presence or tracking of “currently signed in” users; the admin spreadsheet views should reflect registered/saved profiles rather than live session state.",
+    "Uploading/hosting the APK binary in the canister or repository as part of this change (only displaying a download link and allowing admins to configure it).",
+    "Adding external spreadsheet integrations (Google Sheets, Office 365) or any external database."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}
