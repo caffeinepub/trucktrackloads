@@ -1,48 +1,26 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T18:09:42.456Z",
+  "generatedAt": "2026-02-16T19:06:22.924Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
+        "summary": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useAdminVerification.ts",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/components/layout/TopNav.tsx",
+          "frontend/src/components/layout/Footer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useAdminVerification.ts",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/components/layout/TopNav.tsx",
+          "frontend/src/components/layout/Footer.tsx"
         ]
       }
     ]
@@ -52,8 +30,8 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/hooks/useAdminVerification.ts",
-    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/components/layout/Footer.tsx",
+    "frontend/src/components/layout/TopNav.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

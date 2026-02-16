@@ -1,9 +1,9 @@
 {
   "frontend/src/App.tsx": "Main application component that sets up React Query, TanStack Router with hash history from routeTree, theme provider, and toast notifications.",
-  "frontend/src/routeTree.tsx": "Route tree configuration with new /contracts route registered and wired to ContractsPage component.",
+  "frontend/src/routeTree.tsx": "Route tree configuration with new /download route registered and wired to DownloadPage component, maintaining all existing routes including admin routes.",
   "frontend/src/components/layout/SiteLayout.tsx": "Shared layout wrapper using TanStack Router's Outlet component for rendering child routes, with TopNav, Footer, and BottomAd components.",
-  "frontend/src/components/layout/TopNav.tsx": "Responsive navigation header with Admin link added to both desktop and mobile navigation menus, routing to /admin/login.",
-  "frontend/src/components/layout/Footer.tsx": "Site footer with coverage areas text updated to include Democratic Republic of Congo.",
+  "frontend/src/components/layout/TopNav.tsx": "Responsive navigation header with Admin link added to both desktop and mobile navigation menus, routing to /admin/login for password-based admin access.",
+  "frontend/src/components/layout/Footer.tsx": "Site footer with Quick Links section that now includes an Admin navigation link routing to /#/admin/login, maintaining all other links and coverage areas.",
   "frontend/src/components/auth/LoginButton.tsx": "Internet Identity login/logout button with optional onLoginSuccess callback support for post-login navigation, displays user profile name when authenticated and clears query cache on logout.",
   "frontend/src/components/auth/ProfileSetupModal.tsx": "Modal dialog for first-time users to create their profile (name and email) after logging in with Internet Identity.",
   "frontend/src/components/auth/RequireAdmin.tsx": "Admin route guard that uses useEffect for navigation with replace flag, properly handling password-admin session token verification with distinct loading states for checking authorization vs verifying admin access, and only redirecting after definitive verification outcomes (not while loading).",
@@ -49,5 +49,7 @@
   "frontend/src/hooks/useAdminToken.ts": "Reactive hook that tracks the current admin token from sessionStorage and automatically updates when the token changes via the canonical admin-token change event from shared constants.",
   "frontend/src/pages/ContractsPage.tsx": "Contracts page with role-based access where verified clients can post contracts via form and verified transporters can browse contract loadboard, showing appropriate English access messages for unauthorized users.",
   "frontend/src/constants/adminToken.ts": "Shared constants module exporting the admin sessionStorage key and canonical window event name for admin token changes, ensuring consistent event broadcasting across the application.",
-  "frontend/src/hooks/useAdminVerification.ts": "Deterministic admin verification helper that directly calls the backend isCallerAdmin method and returns a boolean result without relying on refetchQueries return values, with proper error handling and cache updates."
+  "frontend/src/hooks/useAdminVerification.ts": "Deterministic admin verification helper that directly calls the backend isCallerAdmin method and returns a boolean result without relying on refetchQueries return values, with proper error handling and cache updates.",
+  "frontend/src/pages/DownloadPage.tsx": "Public download page that displays an Android APK download button using either the backend-configured link or a frontend fallback URL, with appropriate loading states and empty-state messaging when neither is available.",
+  "frontend/src/config/download.ts": "Configuration module that reads and provides a fallback Android APK URL from environment variables (VITE_FALLBACK_ANDROID_APK_URL) for use when the backend link is not configured."
 }

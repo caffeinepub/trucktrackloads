@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the admin login verification crash on `/admin/login` and ensure navigation to `/admin` only happens after a successful, deterministic admin verification result.
+**Goal:** Restore a visible Admin entry point in the public UI so users can access the existing admin login page.
 
 **Planned changes:**
-- Update the post-login admin verification step to use a React Query flow that returns a clear boolean outcome (no indexing into undefined/void values).
-- Ensure successful verification navigates to `/admin`, and unsuccessful/errored verification keeps the user on `/admin/login` with an English error message.
-- Update the "Retry Verification" action to use the same corrected verification mechanism and recover without a full page refresh.
-- Add defensive checks and diagnostic logging so missing prerequisites (e.g., token/actor/query result unavailable) show a clear English error and never crash the page.
+- Add an "Admin" (or "Admin Login") link to the desktop top navigation that routes to `/admin/login`.
+- Add the same "Admin" (or "Admin Login") link to the mobile navigation that routes to `/admin/login`.
+- Add an "Admin" (or "Admin Login") link to the footer Quick Links that routes to `/admin/login`.
 
-**User-visible outcome:** Admins can log in without seeing the “Cannot read properties of undefined (reading '0')” error; verification either completes and opens `/admin`, or shows a clear English failure message with a working “Retry Verification” option.
+**User-visible outcome:** Users can find and open the Admin login page from the site’s desktop navigation, mobile navigation, and footer Quick Links, without changing any existing admin route behavior.

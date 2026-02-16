@@ -4,36 +4,33 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Admin login attempt not working as expected (user reports issue when trying to log in)."
+    "Previous build attempt did not complete due to an AI/build error."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-fix-the-admin-password-login-flow-at-admin-login-so-it-no-longer-throws-a-runtime-error-cannot-read-properties-of-undefined-reading-0-during-the-post-login-admin-verification-step-and-reliably-navigates-to-admin-only-after-a-successful-admin-verification-result",
-      "title": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
+      "id": "feature-add-an-admin-entry-point-back-into-the-public-ui-so-the-admin-area-can-be-accessed-again-link-to-the-existing-admin-login-route-and-ensure-it-is-available-on-both-desktop-and-mobile-navigation",
+      "title": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-update-the-retry-verification-flow-on-the-admin-login-page-to-use-the-same-corrected-verification-mechanism-as-the-main-login-flow-preventing-the-same-runtime-crash-and-ensuring-it-can-recover-without-a-full-page-refresh",
-      "title": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-defensive-diagnostics-on-the-admin-login-page-so-that-if-admin-verification-cannot-be-determined-e-g-missing-token-actor-not-ready-or-query-result-unavailable-the-ui-shows-a-clear-english-error-and-the-diagnostic-log-records-the-exact-stage-that-failed-without-crashing",
-      "title": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Add an admin area/screen back into the app (admin access / restricted settings page)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add an Android download link for the built app",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
   "projectName": "TruckTrack Africa",
   "clarification_mode": "instant",
   "clarification_rounds": 0

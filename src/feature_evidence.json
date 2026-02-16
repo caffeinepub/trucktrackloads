@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-admin-password-login-flow-at-admin-login-so-it-no-longer-throws-a-runtime-error-cannot-read-properties-of-undefined-reading-0-during-the-post-login-admin-verification-step-and-reliably-navigates-to-admin-only-after-a-successful-admin-verification-result",
-      "featureTitle": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
+      "featureId": "feature-add-an-admin-entry-point-back-into-the-public-ui-so-the-admin-area-can-be-accessed-again-link-to-the-existing-admin-login-route-and-ensure-it-is-available-on-both-desktop-and-mobile-navigation",
+      "featureTitle": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
       "files": [
-        "frontend/src/hooks/useAdminVerification.ts",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+        "frontend/src/components/layout/Footer.tsx",
+        "frontend/src/components/layout/TopNav.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -20,48 +20,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-retry-verification-flow-on-the-admin-login-page-to-use-the-same-corrected-verification-mechanism-as-the-main-login-flow-preventing-the-same-runtime-crash-and-ensuring-it-can-recover-without-a-full-page-refresh",
-      "featureTitle": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
-      "files": [
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-defensive-diagnostics-on-the-admin-login-page-so-that-if-admin-verification-cannot-be-determined-e-g-missing-token-actor-not-ready-or-query-result-unavailable-the-ui-shows-a-clear-english-error-and-the-diagnostic-log-records-the-exact-stage-that-failed-without-crashing",
-      "featureTitle": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
-      "files": [
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

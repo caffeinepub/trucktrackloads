@@ -1,98 +1,39 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T18:09:42.452Z",
-  "summary": "Diff adds a deterministic admin verification helper (verifyAdminAccess) and updates the AdminPasswordLoginPage retry verification flow with prerequisite checks, English error messages, and diagnostic logging. However, due to truncation of AdminPasswordLoginPage.tsx, the main post-login verification flow (handleSubmit) cannot be confirmed as updated to use the same deterministic mechanism and correct navigation/error behavior. The diff also includes several unrelated UI/routing/features not requested in the BuildRequest.",
+  "generatedAt": "2026-02-16T19:06:22.921Z",
+  "summary": "REQ-1 is partially implemented: an Admin link was added to the desktop top navigation and to the footer Quick Links. The mobile navigation Admin link cannot be confirmed from the provided (truncated) diff. Several unrelated changes appear in the diff summary (admin token/url param utilities and other admin-auth related behavior) that were not requested by the BuildRequest.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error during post-login verification, uses a deterministic boolean React Query verification result, and navigates to \"/admin\" only after successful verification; otherwise stays on login with an English error message and a working retry action.",
-      "reason": "The diff shows a new deterministic verification helper and an updated retry flow, but the main login submit handler (post-credential verification step) is truncated, so it cannot be verified that it no longer relies on indexing into an undefined refetch return, and that it only navigates after a definitive boolean verification result with correct error handling on false/error.",
+      "requirement": "Mobile navigation includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
+      "reason": "TopNav.tsx is truncated in the mobile menu section, and the visible portion does not include an Admin link. Therefore the mobile navigation AC cannot be verified as implemented from the provided diff summary.",
       "evidence": [
-        "frontend/src/pages/AdminPasswordLoginPage.tsx (truncated)",
-        "frontend/src/hooks/useAdminVerification.ts"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Update the \"Retry Verification\" flow to use the same corrected verification mechanism as the main login flow, preventing the crash and allowing recovery without refresh.",
-      "reason": "The retry flow is updated to use verifyAdminAccess, but because the main login flow changes are not visible (handleSubmit is truncated), it cannot be confirmed that both flows use the same corrected mechanism.",
-      "evidence": [
-        "frontend/src/pages/AdminPasswordLoginPage.tsx (truncated)",
-        "frontend/src/hooks/useAdminVerification.ts"
+        "frontend/src/components/layout/TopNav.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "New /contracts route registered and wired to a ContractsPage component.",
-      "reason": "Not requested; BuildRequest is specifically about fixing the admin login verification crash and related diagnostics.",
+      "description": "Added/modified URL parameter utilities that reference admin token storage/events (ADMIN_TOKEN_KEY, ADMIN_TOKEN_CHANGE_EVENT) and related session persistence/cleanup logic.",
+      "reason": "The BuildRequest only asks to restore an Admin entry point link in the public UI; it does not request changes to admin token handling or URL param/session storage utilities.",
       "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/routeTree.tsx)"
+        "frontend/src/utils/urlParams.ts (truncated)"
       ]
     },
     {
-      "description": "Top navigation updated to add an Admin link to /admin/login.",
-      "reason": "Not requested as part of the crash fix requirements.",
+      "description": "Added/changed a \"caffeine.ai\" referral link section in the footer (including appIdentifier hostname encoding and external link markup).",
+      "reason": "The BuildRequest only requests adding an Admin link entry point; it does not request adding or changing footer referral/attribution links.",
       "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/components/layout/TopNav.tsx)"
-      ]
-    },
-    {
-      "description": "Footer and multiple pages updated to include Democratic Republic of Congo in coverage areas text.",
-      "reason": "Not requested; unrelated content updates.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/components/layout/Footer.tsx, frontend/src/pages/AboutPage.tsx, frontend/src/pages/ServicesPage.tsx)"
-      ]
-    },
-    {
-      "description": "Internet Identity LoginButton updated with onLoginSuccess support and cache clearing on logout.",
-      "reason": "Non-goal includes not implementing II-based admin auth; while this is not necessarily admin auth, it is unrelated to the requested admin password verification crash fix.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/components/auth/LoginButton.tsx)"
-      ]
-    },
-    {
-      "description": "Admin route guard (RequireAdmin) updated with new navigation/verification/loading-state behavior.",
-      "reason": "Not requested; requirements are scoped to the /admin/login page login/verification crash and retry/diagnostics.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/components/auth/RequireAdmin.tsx)"
-      ]
-    },
-    {
-      "description": "AccessDeniedScreen updated with an additional \"Admin Login\" button.",
-      "reason": "Not requested; unrelated UI change.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/components/auth/AccessDeniedScreen.tsx)"
-      ]
-    },
-    {
-      "description": "Multiple new React Query hooks for fetching clients/transporters/pending loads with IDs to support admin dashboard actions.",
-      "reason": "Explicit non-goal: adding new admin features beyond fixing the login/verification crash.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/hooks/useQueries.ts)"
-      ]
-    },
-    {
-      "description": "LoadBoard and registration pages updated with new verification gating/messaging and other behavior changes.",
-      "reason": "Not requested; unrelated feature work.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/pages/LoadBoardPage.tsx, ClientRegistrationPage.tsx, TransporterRegistrationPage.tsx)"
-      ]
-    },
-    {
-      "description": "Contact page contact details updated.",
-      "reason": "Not requested; unrelated content change.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/pages/ContactPage.tsx)"
+        "frontend/src/components/layout/Footer.tsx"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useAdminVerification.ts",
-    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/components/layout/Footer.tsx",
+    "frontend/src/components/layout/TopNav.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

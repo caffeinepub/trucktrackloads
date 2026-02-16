@@ -1,72 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Fix admin login crash during verification (Cannot read properties of undefined reading '0')",
+  "title": "Restore Admin Entry Point in UI",
   "projectName": "TruckTrack Africa",
-  "priority": "high",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the admin password login flow at \"/admin/login\" so it no longer throws a runtime error \"Cannot read properties of undefined (reading '0')\" during the post-login admin verification step, and reliably navigates to \"/admin\" only after a successful admin verification result.",
+      "text": "Add an Admin entry point back into the public UI so the admin area can be accessed again (link to the existing /admin/login route), and ensure it is available on both desktop and mobile navigation.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "this is what I see when I try to login"
+          "how do I access admin",
+          "ok do it"
         ]
       },
       "acceptanceCriteria": [
-        "After submitting correct admin credentials, the login page does not show the error \"Cannot read properties of undefined (reading '0')\".",
-        "The admin verification step uses a React Query API that returns a deterministic boolean result (not relying on indexing into an undefined/void refetch return value).",
-        "If verification returns true, the app navigates to \"/admin\" and the admin dashboard renders.",
-        "If verification fails (false) or errors, the user remains on \"/admin/login\" and sees an English error message explaining verification failed, with a working \"Retry Verification\" action."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Update the \"Retry Verification\" flow on the admin login page to use the same corrected verification mechanism as the main login flow, preventing the same runtime crash and ensuring it can recover without a full page refresh.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "this is what I see when I try to login"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Tapping \"Retry Verification\" does not throw any runtime error and updates the diagnostic log with the retry attempt.",
-        "If admin verification succeeds after retry, the app navigates to \"/admin\"; otherwise it shows an English error message and remains on \"/admin/login\"."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add defensive diagnostics on the admin login page so that if admin verification cannot be determined (e.g., missing token, actor not ready, or query result unavailable), the UI shows a clear English error and the diagnostic log records the exact stage that failed without crashing.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Cannot read properties of undefined (reading '0')"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When verification cannot be completed due to missing prerequisites (e.g., token missing), the page shows an English error message rather than throwing an exception.",
-        "Diagnostic log entries continue to render even when a step fails, and no uncaught exception occurs."
+        "Top navigation includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\" on desktop.",
+        "Mobile navigation includes the same \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
+        "Footer Quick Links includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
+        "The existing admin routes remain unchanged: \"/admin\" continues to be protected and \"/admin/login\" remains the login entry point."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only shadcn components).",
-    "Keep backend as a single Motoko actor in backend/main.mo; only introduce a migration if persistent state changes are required (not expected for this fix).",
-    "Use English for any user-facing text related to login/verification errors."
+    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
+    "Keep backend as a single Motoko actor in backend/main.mo; do not introduce additional canisters/services."
   ],
   "nonGoals": [
-    "Changing the hardcoded backend admin username/password or admin token value.",
-    "Implementing Internet Identity-based admin authentication (admin remains password/token based).",
-    "Adding new admin features in the dashboard beyond fixing the login/verification crash."
+    "Redesigning or rebuilding the Admin Dashboard features/tabs (they already exist).",
+    "Changing the admin authentication mechanism or credentials.",
+    "Adding third-party authentication providers."
   ],
   "imageRequirements": {
     "required": [],

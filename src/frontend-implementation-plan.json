@@ -1,57 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "TruckTrack Africa — Fix admin login verification crash",
+  "title": "Restore Admin Entry Point in Public Navigation (Desktop + Mobile + Footer)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Replace the admin verification logic on /admin/login with a deterministic boolean React Query-based check that never indexes into undefined refetch results, and only navigates to /admin after verified admin access.",
+      "summary": "Add an Admin entry point link to the existing /admin/login route in desktop nav, mobile nav, and footer quick links without changing existing admin route protection.",
       "acceptanceCriteria": [
-        "After submitting correct admin credentials, the login page does not show the error \"Cannot read properties of undefined (reading '0')\".",
-        "The admin verification step uses a React Query API that returns a deterministic boolean result (not relying on indexing into an undefined/void refetch return value).",
-        "If verification returns true, the app navigates to \"/admin\" and the admin dashboard renders.",
-        "If verification fails (false) or errors, the user remains on \"/admin/login\" and sees an English error message explaining verification failed, with a working \"Retry Verification\" action."
+        "Top navigation includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\" on desktop.",
+        "Mobile navigation includes the same \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
+        "Footer Quick Links includes an \"Admin\" (or \"Admin Login\") link that navigates to \"/admin/login\".",
+        "The existing admin routes remain unchanged: \"/admin\" continues to be protected and \"/admin/login\" remains the login entry point."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useAdminVerification.ts",
-          "operation": "create",
-          "description": "Create a small helper hook/util that performs admin verification as a deterministic boolean using the existing backend admin-check capability (e.g., initialize with the stored secret token then call the admin check), designed to be used from the admin login page without relying on refetchQueries return values. Use the authorization component’s intended admin-verification approach; verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/layout/TopNav.tsx",
+          "operation": "modify",
+          "description": "Add an \"Admin\" / \"Admin Login\" navigation item that routes to \"/admin/login\" in the desktop nav section, and add the same link to the mobile menu list (ensuring it closes the mobile menu on click). Keep existing admin protection logic unchanged; only restore the public entry point."
         },
         {
-          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
+          "path": "frontend/src/components/layout/Footer.tsx",
           "operation": "modify",
-          "description": "Update the post-login verification step to call the new deterministic admin verification helper (instead of using queryClient.refetchQueries() and indexing into its return). Ensure navigation to \"/admin\" happens only after a true verification result; otherwise keep the user on \"/admin/login\" and show an English verification-failed message. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Make the \"Retry Verification\" action on /admin/login reuse the corrected deterministic verification mechanism and recover without refreshing.",
-      "acceptanceCriteria": [
-        "Tapping \"Retry Verification\" does not throw any runtime error and updates the diagnostic log with the retry attempt.",
-        "If admin verification succeeds after retry, the app navigates to \"/admin\"; otherwise it shows an English error message and remains on \"/admin/login\"."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
-          "operation": "modify",
-          "description": "Refactor the \"Retry Verification\" handler to use the same deterministic admin verification helper used by the main login flow, and ensure it appends a clear retry-related entry to the diagnostic log without clearing it in a way that hides the retry attempt. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add defensive diagnostics so missing prerequisites (token/actor/query readiness) show clear English errors and always render the diagnostic log without crashing.",
-      "acceptanceCriteria": [
-        "When verification cannot be completed due to missing prerequisites (e.g., token missing), the page shows an English error message rather than throwing an exception.",
-        "Diagnostic log entries continue to render even when a step fails, and no uncaught exception occurs."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
-          "operation": "modify",
-          "description": "Add explicit prerequisite checks and diagnostic stages for verification (e.g., actor unavailable, token missing, verification result unavailable) so failures are handled via English UI messages + diagnostic log entries instead of exceptions. Ensure all verification paths (post-login and retry) fail gracefully and keep the log rendering. Verify the component's usage instructions before implementing."
+          "description": "Add an \"Admin\" / \"Admin Login\" item under the Footer \"Quick Links\" list that navigates to the hash-routed admin login path (\"/#/admin/login\") consistent with existing footer links."
         }
       ]
     }

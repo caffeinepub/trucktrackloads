@@ -211,12 +211,12 @@ export function getSecretParameter(paramName: string): string | null {
 
 /**
  * Admin Token Management Functions
- * These functions manage the password-based admin authentication token
+ * These functions manage the password-based admin session token
  */
 
 /**
- * Stores the admin token in sessionStorage and broadcasts a change event
- * @param token - The admin authentication token
+ * Sets the admin token in sessionStorage and broadcasts a change event
+ * @param token - The admin token to store
  */
 export function setAdminToken(token: string): void {
     storeSessionParameter(ADMIN_TOKEN_KEY, token);
@@ -224,8 +224,8 @@ export function setAdminToken(token: string): void {
 }
 
 /**
- * Retrieves the admin token from sessionStorage
- * @returns The admin token if found, null otherwise
+ * Gets the current admin token from sessionStorage
+ * @returns The admin token if present, null otherwise
  */
 export function getAdminToken(): string | null {
     return getSessionParameter(ADMIN_TOKEN_KEY);
@@ -240,8 +240,8 @@ export function clearAdminToken(): void {
 }
 
 /**
- * Checks if a password-based admin session exists
- * @returns True if an admin token is present in sessionStorage
+ * Checks if there is an active password-based admin session
+ * @returns true if an admin token exists in sessionStorage, false otherwise
  */
 export function hasPasswordAdminSession(): boolean {
     return getAdminToken() !== null;

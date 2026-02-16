@@ -44,6 +44,9 @@ export default function TopNav() {
               <Link to="/contact">Contact</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
+              <Link to="/download">Download</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
               <Link to="/admin/login">Admin</Link>
             </Button>
           </nav>
@@ -92,6 +95,9 @@ export default function TopNav() {
             </Button>
             <Button variant="ghost" size="sm" asChild className="justify-start">
               <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/download" onClick={() => setMobileMenuOpen(false)}>Download</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild className="justify-start">
               <Link to="/admin/login" onClick={() => setMobileMenuOpen(false)}>Admin</Link>

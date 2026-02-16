@@ -10,6 +10,7 @@ import ClientRegistrationPage from './pages/ClientRegistrationPage';
 import TransporterRegistrationPage from './pages/TransporterRegistrationPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminPasswordLoginPage from './pages/AdminPasswordLoginPage';
+import DownloadPage from './pages/DownloadPage';
 
 const rootRoute = createRootRoute({
   component: SiteLayout,
@@ -63,6 +64,12 @@ const transporterRegistrationRoute = createRoute({
   component: TransporterRegistrationPage,
 });
 
+const downloadRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/download',
+  component: DownloadPage,
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
@@ -84,6 +91,7 @@ const routeTree = rootRoute.addChildren([
   contractsRoute,
   clientRegistrationRoute,
   transporterRegistrationRoute,
+  downloadRoute,
   adminRoute,
   adminLoginRoute,
 ]);

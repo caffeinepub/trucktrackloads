@@ -40,7 +40,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/#/admin" className="hover:text-primary transition-colors">
+                <a href="/#/admin/login" className="hover:text-primary transition-colors">
                   Admin
                 </a>
               </li>
