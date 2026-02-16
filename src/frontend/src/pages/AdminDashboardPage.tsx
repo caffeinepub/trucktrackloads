@@ -34,6 +34,7 @@ import { ClientVerificationStatus } from '../backend';
 import { clearAdminToken, hasPasswordAdminSession } from '@/utils/urlParams';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import TransporterLocationsTab from '@/components/admin/TransporterLocationsTab';
 
 // TransporterVerificationStatus has the same shape as ClientVerificationStatus
 type TransporterVerificationStatus = ClientVerificationStatus;
@@ -132,7 +133,7 @@ function AdminDashboardContent() {
       Email: client.email,
       Phone: client.phone,
       Address: client.address,
-      'Contract Details': client.contract?.contractText || 'N/A',
+      'Contract Count': client.contracts.length,
       'Verification Status': client.verificationStatus,
     }));
     downloadCSV(csvData, `clients-${new Date().toISOString().split('T')[0]}.csv`);
@@ -147,7 +148,7 @@ function AdminDashboardContent() {
       Phone: transporter.phone,
       Address: transporter.address,
       'Documents Count': transporter.documents.length,
-      'Contract Details': transporter.contract?.contractText || 'N/A',
+      'Contract Count': transporter.contracts.length,
       'Verification Status': transporter.verificationStatus,
     }));
     downloadCSV(csvData, `transporters-${new Date().toISOString().split('T')[0]}.csv`);
@@ -187,120 +188,102 @@ function AdminDashboardContent() {
         </div>
         {hasPasswordAdmin && (
           <Button onClick={handlePasswordAdminSignOut} variant="outline" size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
         )}
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Loads</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingLoadsLoading ? '...' : pendingLoads.length}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Loads</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{approvedLoadsLoading ? '...' : approvedLoads.length}</div>
-            <p className="text-xs text-muted-foreground">Currently approved</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Transporters</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{transportersLoading ? '...' : transporters.length}</div>
-            <p className="text-xs text-muted-foreground">Registered</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Messages</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contactsLoading ? '...' : contacts.length}</div>
-            <p className="text-xs text-muted-foreground">Contact inquiries</p>
-          </CardContent>
-        </Card>
-      </div>
-
       <Tabs defaultValue="pending-loads" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
-          <TabsTrigger value="pending-loads">Pending Loads</TabsTrigger>
-          <TabsTrigger value="approved-loads">Approved Loads</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="transporters">Transporters</TabsTrigger>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-          <TabsTrigger value="apk">APK Download</TabsTrigger>
-          <TabsTrigger value="ads">Ad Settings</TabsTrigger>
+        <TabsList className="bg-muted">
+          <TabsTrigger value="pending-loads">
+            <Package className="h-4 w-4 mr-2" />
+            Pending Loads
+          </TabsTrigger>
+          <TabsTrigger value="approved-loads">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Approved Loads
+          </TabsTrigger>
+          <TabsTrigger value="clients">
+            <Users className="h-4 w-4 mr-2" />
+            Clients
+          </TabsTrigger>
+          <TabsTrigger value="transporters">
+            <Truck className="h-4 w-4 mr-2" />
+            Transporters
+          </TabsTrigger>
+          <TabsTrigger value="transporter-locations">
+            <Truck className="h-4 w-4 mr-2" />
+            Transporter Locations
+          </TabsTrigger>
+          <TabsTrigger value="contacts">
+            <Mail className="h-4 w-4 mr-2" />
+            Contact Messages
+          </TabsTrigger>
+          <TabsTrigger value="apk-link">
+            <Smartphone className="h-4 w-4 mr-2" />
+            APK Link
+          </TabsTrigger>
+          <TabsTrigger value="ad-settings">
+            <Settings className="h-4 w-4 mr-2" />
+            Ad Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending-loads" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Pending Load Approvals</CardTitle>
-              <CardDescription>Review and approve or reject load requests from clients</CardDescription>
+              <CardDescription>Review and approve or reject loads posted by clients</CardDescription>
             </CardHeader>
             <CardContent>
               {pendingLoadsLoading ? (
                 <p className="text-muted-foreground">Loading pending loads...</p>
               ) : pendingLoads.length === 0 ? (
-                <p className="text-muted-foreground">No pending loads at this time</p>
+                <p className="text-muted-foreground">No pending loads</p>
               ) : (
                 <div className="space-y-4">
                   {pendingLoads.map((load, index) => (
-                    <Card key={index}>
+                    <Card key={index} className="border-2">
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-lg">{load.description}</CardTitle>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Weight className="h-4 w-4" />
-                              <span>{load.weight} tons</span>
-                              <span className="mx-2">•</span>
-                              <Truck className="h-4 w-4" />
-                              <span>{getTruckTypeName(load.truckType)}</span>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                            Pending
-                          </Badge>
-                        </div>
+                        <CardTitle className="text-lg">Load #{index + 1}</CardTitle>
+                        <CardDescription>{load.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Weight className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Weight:</span>
+                            <span className="font-medium">{load.weight} tons</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Truck className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Truck Type:</span>
+                            <span className="font-medium">{getTruckTypeName(load.truckType)}</span>
+                          </div>
+                        </div>
+
                         <LoadLocations
                           loadingLocation={load.loadingLocation}
                           offloadingLocation={load.offloadingLocation}
                         />
+
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => handleApprove(load.confirmation.orderId, true)}
+                            onClick={() => handleApprove(`L${index + 1}`, true)}
                             disabled={approveLoad.isPending}
                             size="sm"
+                            className="flex-1"
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Approve
                           </Button>
                           <Button
-                            onClick={() => handleApprove(load.confirmation.orderId, false)}
+                            onClick={() => handleApprove(`L${index + 1}`, false)}
                             disabled={approveLoad.isPending}
                             variant="destructive"
                             size="sm"
+                            className="flex-1"
                           >
                             <XCircle className="h-4 w-4 mr-2" />
                             Reject
@@ -319,35 +302,42 @@ function AdminDashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle>Approved Loads</CardTitle>
-              <CardDescription>Currently active and approved loads on the board</CardDescription>
+              <CardDescription>All approved loads visible to transporters</CardDescription>
             </CardHeader>
             <CardContent>
               {approvedLoadsLoading ? (
                 <p className="text-muted-foreground">Loading approved loads...</p>
               ) : approvedLoads.length === 0 ? (
-                <p className="text-muted-foreground">No approved loads at this time</p>
+                <p className="text-muted-foreground">No approved loads</p>
               ) : (
                 <div className="space-y-4">
                   {approvedLoads.map((load, index) => (
-                    <Card key={index}>
+                    <Card key={index} className="border-2">
                       <CardHeader>
                         <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-lg">{load.description}</CardTitle>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Weight className="h-4 w-4" />
-                              <span>{load.weight} tons</span>
-                              <span className="mx-2">•</span>
-                              <Truck className="h-4 w-4" />
-                              <span>{getTruckTypeName(load.truckType)}</span>
-                            </div>
+                          <div>
+                            <CardTitle className="text-lg">Load #{index + 1}</CardTitle>
+                            <CardDescription>{load.description}</CardDescription>
                           </div>
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             Approved
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Weight className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Weight:</span>
+                            <span className="font-medium">{load.weight} tons</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Truck className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Truck Type:</span>
+                            <span className="font-medium">{getTruckTypeName(load.truckType)}</span>
+                          </div>
+                        </div>
+
                         <LoadLocations
                           loadingLocation={load.loadingLocation}
                           offloadingLocation={load.offloadingLocation}
@@ -366,8 +356,8 @@ function AdminDashboardContent() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Client Management</CardTitle>
-                  <CardDescription>Verify and manage client accounts</CardDescription>
+                  <CardTitle>Client Verification</CardTitle>
+                  <CardDescription>Manage client registrations and verification status</CardDescription>
                 </div>
                 <Button onClick={handleExportClients} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
@@ -379,57 +369,59 @@ function AdminDashboardContent() {
               {clientsLoading ? (
                 <p className="text-muted-foreground">Loading clients...</p>
               ) : clients.length === 0 ? (
-                <p className="text-muted-foreground">No registered clients</p>
+                <p className="text-muted-foreground">No clients registered</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.map((client, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{client.company}</TableCell>
-                        <TableCell>{client.contactPerson}</TableCell>
-                        <TableCell>{client.email}</TableCell>
-                        <TableCell>{client.phone}</TableCell>
-                        <TableCell>{getVerificationBadge(client.verificationStatus)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {client.verificationStatus !== ClientVerificationStatus.verified && (
-                              <Button
-                                onClick={() => handleVerifyClient(String(index), ClientVerificationStatus.verified)}
-                                disabled={verifyClient.isPending}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Verify
-                              </Button>
-                            )}
-                            {client.verificationStatus !== ClientVerificationStatus.rejected && (
-                              <Button
-                                onClick={() => handleVerifyClient(String(index), ClientVerificationStatus.rejected)}
-                                disabled={verifyClient.isPending}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Contact Person</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.map((client, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{client.company}</TableCell>
+                          <TableCell>{client.contactPerson}</TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell>{client.phone}</TableCell>
+                          <TableCell>{getVerificationBadge(client.verificationStatus)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {client.verificationStatus !== ClientVerificationStatus.verified && (
+                                <Button
+                                  onClick={() => handleVerifyClient(client.email, ClientVerificationStatus.verified)}
+                                  disabled={verifyClient.isPending}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Verify
+                                </Button>
+                              )}
+                              {client.verificationStatus !== ClientVerificationStatus.rejected && (
+                                <Button
+                                  onClick={() => handleVerifyClient(client.email, ClientVerificationStatus.rejected)}
+                                  disabled={verifyClient.isPending}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -440,8 +432,8 @@ function AdminDashboardContent() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Transporter Management</CardTitle>
-                  <CardDescription>Verify and manage transporter accounts</CardDescription>
+                  <CardTitle>Transporter Verification</CardTitle>
+                  <CardDescription>Manage transporter registrations and verification status</CardDescription>
                 </div>
                 <Button onClick={handleExportTransporters} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
@@ -453,83 +445,94 @@ function AdminDashboardContent() {
               {transportersLoading ? (
                 <p className="text-muted-foreground">Loading transporters...</p>
               ) : transporters.length === 0 ? (
-                <p className="text-muted-foreground">No registered transporters</p>
+                <p className="text-muted-foreground">No transporters registered</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transporters.map((transporter, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{transporter.company}</TableCell>
-                        <TableCell>{transporter.contactPerson}</TableCell>
-                        <TableCell>{transporter.email}</TableCell>
-                        <TableCell>{transporter.phone}</TableCell>
-                        <TableCell>{getVerificationBadge(transporter.verificationStatus)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {transporter.verificationStatus !== TransporterVerificationStatus.verified && (
-                              <Button
-                                onClick={() => handleVerifyTransporter(String(index), TransporterVerificationStatus.verified)}
-                                disabled={verifyTransporter.isPending}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Verify
-                              </Button>
-                            )}
-                            {transporter.verificationStatus !== TransporterVerificationStatus.rejected && (
-                              <Button
-                                onClick={() => handleVerifyTransporter(String(index), TransporterVerificationStatus.rejected)}
-                                disabled={verifyTransporter.isPending}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Contact Person</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Truck Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {transporters.map((transporter, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{transporter.company}</TableCell>
+                          <TableCell>{transporter.contactPerson}</TableCell>
+                          <TableCell>{transporter.email}</TableCell>
+                          <TableCell>{transporter.phone}</TableCell>
+                          <TableCell>{getTruckTypeName(transporter.truckType)}</TableCell>
+                          <TableCell>{getVerificationBadge(transporter.verificationStatus)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {transporter.verificationStatus !== TransporterVerificationStatus.verified && (
+                                <Button
+                                  onClick={() => handleVerifyTransporter(transporter.email, TransporterVerificationStatus.verified)}
+                                  disabled={verifyTransporter.isPending}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Verify
+                                </Button>
+                              )}
+                              {transporter.verificationStatus !== TransporterVerificationStatus.rejected && (
+                                <Button
+                                  onClick={() => handleVerifyTransporter(transporter.email, TransporterVerificationStatus.rejected)}
+                                  disabled={verifyTransporter.isPending}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="messages" className="space-y-4">
+        <TabsContent value="transporter-locations" className="space-y-4">
+          <TransporterLocationsTab />
+        </TabsContent>
+
+        <TabsContent value="contacts" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Contact Messages</CardTitle>
-              <CardDescription>Messages from the contact form</CardDescription>
+              <CardDescription>Messages submitted through the contact form</CardDescription>
             </CardHeader>
             <CardContent>
               {contactsLoading ? (
-                <p className="text-muted-foreground">Loading messages...</p>
+                <p className="text-muted-foreground">Loading contact messages...</p>
               ) : contacts.length === 0 ? (
                 <p className="text-muted-foreground">No contact messages</p>
               ) : (
                 <div className="space-y-4">
                   {contacts.map(([principal, contact], index) => (
-                    <Card key={index}>
+                    <Card key={index} className="border-2">
                       <CardHeader>
                         <CardTitle className="text-lg">{contact.name}</CardTitle>
                         <CardDescription>{contact.email}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm whitespace-pre-wrap">{contact.message}</p>
+                        <p className="text-xs text-muted-foreground mt-4">
+                          Principal: {principal.toString()}
+                        </p>
                       </CardContent>
                     </Card>
                   ))}
@@ -539,37 +542,36 @@ function AdminDashboardContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="apk" className="space-y-4">
+        <TabsContent value="apk-link" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Android APK Download Link</CardTitle>
-              <CardDescription>Set the download link for the Android app</CardDescription>
+              <CardDescription>Set the download link for the Android app APK file</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {apkLinkLoading ? (
-                <p className="text-muted-foreground">Loading current APK link...</p>
+                <p className="text-muted-foreground">Loading APK link...</p>
               ) : (
                 <>
                   {apkLink && (
                     <div className="p-4 bg-muted rounded-lg">
                       <Label className="text-sm font-medium mb-2 block">Current APK Link:</Label>
-                      <div className="flex items-center gap-2">
-                        <code className="text-sm flex-1 break-all">{apkLink}</code>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(apkLink, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <a
+                        href={apkLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-2 break-all"
+                      >
+                        {apkLink}
+                        <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                      </a>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="apk-link">New APK Download Link</Label>
+                    <Label htmlFor="apk-link-input">New APK Download Link</Label>
                     <Input
-                      id="apk-link"
+                      id="apk-link-input"
                       type="url"
                       placeholder="https://example.com/app.apk"
                       value={apkLinkInput}
@@ -578,7 +580,6 @@ function AdminDashboardContent() {
                   </div>
 
                   <Button onClick={handleSaveApkLink} disabled={setApkLink.isPending}>
-                    <Smartphone className="h-4 w-4 mr-2" />
                     {setApkLink.isPending ? 'Saving...' : 'Save APK Link'}
                   </Button>
                 </>
@@ -587,17 +588,19 @@ function AdminDashboardContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ads" className="space-y-4">
+        <TabsContent value="ad-settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Advertisement Settings</CardTitle>
+              <CardTitle>Ad Settings</CardTitle>
               <CardDescription>Configure bottom ad display and content</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="ad-enabled">Enable Bottom Ad</Label>
-                  <p className="text-sm text-muted-foreground">Show advertisement at the bottom of pages</p>
+                  <p className="text-sm text-muted-foreground">
+                    Show or hide the bottom ad across the application
+                  </p>
                 </div>
                 <Switch
                   id="ad-enabled"
@@ -620,25 +623,21 @@ function AdminDashboardContent() {
                 </div>
                 <Textarea
                   id="ad-snippet"
-                  placeholder="Enter your ad HTML snippet here..."
                   value={adSnippet}
                   onChange={(e) => setAdSnippet(e.target.value)}
                   rows={8}
                   className="font-mono text-sm"
+                  placeholder="Enter your ad HTML snippet here..."
                 />
                 <p className="text-xs text-muted-foreground">
-                  Paste your ad network's HTML snippet (e.g., Google AdSense, AdMob). The snippet will be rendered in an isolated iframe.
+                  Paste your ad network's HTML snippet here (e.g., Google AdSense, AdMob)
                 </p>
               </div>
 
-              {adSnippet && (
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="border rounded-lg p-4 bg-muted/50">
-                    <AdSnippetPreviewFrame snippet={adSnippet} />
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <AdSnippetPreviewFrame snippet={adSnippet} />
+              </div>
 
               <Button onClick={handleSaveAdSettings}>
                 <Settings className="h-4 w-4 mr-2" />
@@ -654,7 +653,7 @@ function AdminDashboardContent() {
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
-  
+
   return (
     <AdminRouteErrorBoundary queryClient={queryClient}>
       <RequireAdmin>

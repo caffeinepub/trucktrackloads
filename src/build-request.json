@@ -1,99 +1,93 @@
 {
   "kind": "build_request",
-  "title": "Fix admin credential login so the admin dashboard opens reliably",
+  "title": "Fix password-admin login so users can access /admin dashboard after logging in",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the password-based admin session initialization so that the admin dashboard can be opened even when the user is not authenticated with Internet Identity: when a sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token, regardless of Internet Identity auth state.",
+      "text": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "recent-messages"
         ],
         "quotes": [
-          "No it doesn't open"
+          "I cannot access my admin after logging in"
         ]
       },
       "acceptanceCriteria": [
-        "When \"caffeineAdminToken\" exists in sessionStorage and the user is not logged in with Internet Identity, visiting the admin route renders the Admin Dashboard (or a clear admin verification error state) rather than redirecting back to /admin/login indefinitely.",
-        "The actor initialization flow calls \"_initializeAccessControlWithSecret\" with the stored token for password-admin sessions (not only when Internet Identity is present)."
+        "From a fresh session (no Internet Identity login), entering correct admin credentials on `/admin/login` redirects to `/admin` and the dashboard renders.",
+        "After refreshing the page while on `/admin`, the user remains authorized for the duration of the browser session (until sessionStorage is cleared) and the dashboard still renders.",
+        "If the admin token is cleared (logout/sign-out flow), attempting to access `/admin` redirects to `/admin/login`."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the frontend recreates/refetches the actor and all admin-verification queries when the password-admin token changes: the actor query key must incorporate the current \"caffeineAdminToken\" value (or an equivalent reactive signal), and token updates triggered by storing/clearing the token must cause admin checks (e.g., isCallerAdmin) to re-run with the updated token.",
+      "text": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "recent-messages"
         ],
         "quotes": [
-          "No it doesn't open"
+          "I cannot access my admin after logging in"
         ]
       },
       "acceptanceCriteria": [
-        "After a successful credential login (adminLogin), the admin token is stored and the next admin verification query uses the new token without requiring a page refresh.",
-        "After signing out (clearing \"caffeineAdminToken\"), admin verification queries no longer treat the user as admin and protected admin routes redirect to /admin/login."
+        "When `sessionStorage.caffeineAdminToken` is present, admin verification uses an actor instance that has had `_initializeAccessControlWithSecret(caffeineAdminToken)` invoked, regardless of whether Internet Identity is logged in.",
+        "Immediately after successful admin password login, the admin verification query refetches and resolves to authorized without requiring manual refresh.",
+        "No changes are made to any frontend immutable paths listed in SYSTEM_CONTEXT (in particular, do not edit `frontend/src/hooks/useActor.ts`)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Fix admin-route navigation/guard behavior so it does not block or fail to render the admin dashboard: remove any imperative navigation calls performed during render in the admin guard and ensure redirects to \"/admin/login\" only occur after the token/auth state has been evaluated (to avoid redirect loops or blank screens).",
+      "text": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "recent-messages"
         ],
         "quotes": [
-          "No it doesn't open"
+          "I cannot access my admin after logging in"
         ]
       },
       "acceptanceCriteria": [
-        "Navigating to \"/admin\" with a valid \"caffeineAdminToken\" renders the admin dashboard content (not a blank screen).",
-        "Navigating to \"/admin\" without a token reliably redirects to \"/admin/login\".",
-        "No React warnings/errors occur due to navigation being triggered during render for admin route guarding."
+        "Admin login does not rely on arbitrary delays to succeed; it waits on concrete verification/refetch completion before considering the session valid.",
+        "If admin verification fails after login, the UI shows a clear error state (in English) with a working Retry action that re-attempts verification.",
+        "The `/admin` route never gets stuck in an infinite redirect loop between `/admin` and `/admin/login`."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Fix routing configuration so that post-login navigation to the admin dashboard works in the deployed environment: the router must consistently use the intended history mode (hash-based routing) so that navigating to \"/admin\" from the login page actually loads the admin route in production builds.",
-      "target": "frontend",
+      "text": "Verify and, if needed, fix backend admin verification so that the token returned by `adminLogin(username, password)` results in `isCallerAdmin()` returning `true` for the session after the frontend has initialized access control with `_initializeAccessControlWithSecret(token)`.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "recent-messages"
         ],
         "quotes": [
-          "No it doesn't open"
+          "I cannot access my admin after logging in"
         ]
       },
       "acceptanceCriteria": [
-        "After a successful login on the admin login page, the app navigates to the admin dashboard and the route resolves correctly in the deployed build (no 404/blank screen).",
-        "Directly opening the admin dashboard URL in the deployed build works with the app’s configured routing mode (hash routing)."
+        "With correct credentials, `adminLogin` returns a token and subsequent calls in the same session (after `_initializeAccessControlWithSecret(token)`) cause `isCallerAdmin()` to return `true` for that caller.",
+        "With an invalid/empty token, `isCallerAdmin()` returns `false` (or traps with a clear unauthorized error), and admin-only methods remain protected.",
+        "Admin-only backend methods (e.g., approving loads, verifying users, viewing contact messages) remain inaccessible without valid admin verification."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (Shadcn UI sources must be composed, not modified).",
-    "Do not edit any paths listed as immutable: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if a stable-state schema upgrade is required."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not edit any frontend files under `frontend/src/hooks/useInternetIdentity.ts` / `.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or anything in `frontend/src/components/ui` (compose instead).",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Do not add new admin features beyond making the existing credential-based login reliably open the admin dashboard.",
-    "Do not introduce new authentication providers or third-party auth integrations."
+    "Adding new authentication providers (only existing Internet Identity + password-admin token flow).",
+    "Implementing real-time features (WebSockets/push notifications).",
+    "Changing admin credentials or adding a UI for rotating the hidden token beyond what already exists."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

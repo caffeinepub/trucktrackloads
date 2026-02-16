@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSessionParameter } from '@/utils/urlParams';
-
-const ADMIN_TOKEN_KEY = 'caffeineAdminToken';
-const ADMIN_TOKEN_CHANGE_EVENT = 'caffeineAdminTokenChange';
+import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_CHANGE_EVENT } from '@/constants/adminToken';
 
 /**
  * Reactive hook that tracks the current admin token from sessionStorage

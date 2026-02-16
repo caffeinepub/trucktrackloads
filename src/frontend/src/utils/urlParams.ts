@@ -3,14 +3,7 @@
  * Works with both hash-based and browser-based routing
  */
 
-const ADMIN_TOKEN_CHANGE_EVENT = 'caffeineAdminTokenChange';
-
-/**
- * Dispatches a custom event to notify listeners that the admin token has changed
- */
-function notifyTokenChange(): void {
-  window.dispatchEvent(new CustomEvent(ADMIN_TOKEN_CHANGE_EVENT));
-}
+import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_CHANGE_EVENT } from '@/constants/adminToken';
 
 /**
  * Extracts a URL parameter from the current URL
@@ -51,10 +44,6 @@ export function getUrlParameter(paramName: string): string | null {
 export function storeSessionParameter(key: string, value: string): void {
     try {
         sessionStorage.setItem(key, value);
-        // Notify listeners if this is the admin token
-        if (key === 'caffeineAdminToken') {
-          notifyTokenChange();
-        }
     } catch (error) {
         console.warn(`Failed to store session parameter ${key}:`, error);
     }
@@ -106,10 +95,6 @@ export function getPersistedUrlParameter(paramName: string, storageKey?: string)
 export function clearSessionParameter(key: string): void {
     try {
         sessionStorage.removeItem(key);
-        // Notify listeners if this is the admin token
-        if (key === 'caffeineAdminToken') {
-          notifyTokenChange();
-        }
     } catch (error) {
         console.warn(`Failed to clear session parameter ${key}:`, error);
     }
@@ -225,29 +210,41 @@ export function getSecretParameter(paramName: string): string | null {
 }
 
 /**
- * Checks if a password-admin session exists
- */
-export function hasPasswordAdminSession(): boolean {
-  return getSessionParameter('caffeineAdminToken') !== null;
-}
-
-/**
- * Gets the current admin token
- */
-export function getAdminToken(): string | null {
-  return getSessionParameter('caffeineAdminToken');
-}
-
-/**
- * Sets the admin token and notifies listeners
+ * Sets the admin token in sessionStorage and broadcasts a change event
+ * This allows reactive hooks to update when the token changes
+ *
+ * @param token - The admin token to store
  */
 export function setAdminToken(token: string): void {
-  storeSessionParameter('caffeineAdminToken', token);
+    storeSessionParameter(ADMIN_TOKEN_KEY, token);
+    // Broadcast change event using the canonical event name
+    window.dispatchEvent(new Event(ADMIN_TOKEN_CHANGE_EVENT));
 }
 
 /**
- * Clears the admin token and notifies listeners
+ * Clears the admin token from sessionStorage and broadcasts a change event
+ * This allows reactive hooks to update when the token is removed
  */
 export function clearAdminToken(): void {
-  clearSessionParameter('caffeineAdminToken');
+    clearSessionParameter(ADMIN_TOKEN_KEY);
+    // Broadcast change event using the canonical event name
+    window.dispatchEvent(new Event(ADMIN_TOKEN_CHANGE_EVENT));
+}
+
+/**
+ * Gets the current admin token from sessionStorage
+ *
+ * @returns The admin token if found, null otherwise
+ */
+export function getAdminToken(): string | null {
+    return getSessionParameter(ADMIN_TOKEN_KEY);
+}
+
+/**
+ * Checks if a password-admin session exists
+ *
+ * @returns true if an admin token is present in sessionStorage
+ */
+export function hasPasswordAdminSession(): boolean {
+    return !!getAdminToken();
 }

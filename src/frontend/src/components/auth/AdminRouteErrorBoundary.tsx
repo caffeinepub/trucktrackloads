@@ -1,6 +1,6 @@
 import { Component, ReactNode } from 'react';
-import AdminRouteErrorState from './AdminRouteErrorState';
 import { QueryClient } from '@tanstack/react-query';
+import AdminRouteErrorState from './AdminRouteErrorState';
 
 interface Props {
   children: ReactNode;
@@ -23,22 +23,21 @@ export default class AdminRouteErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('Admin route error boundary caught error:', error, errorInfo);
+    console.error('Admin route error:', error, errorInfo);
   }
 
   handleRetry = () => {
-    // Invalidate admin verification queries for recovery
+    // Invalidate actor and admin verification queries
     this.props.queryClient.invalidateQueries({ queryKey: ['actor'] });
     this.props.queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-    this.props.queryClient.invalidateQueries({ queryKey: ['currentUserRole'] });
     
     // Reset error state
     this.setState({ hasError: false, error: null });
   };
 
   render() {
-    if (this.state.hasError) {
-      return <AdminRouteErrorState error={this.state.error} onRetry={this.handleRetry} />;
+    if (this.state.hasError && this.state.error) {
+      return <AdminRouteErrorState onRetry={this.handleRetry} />;
     }
 
     return this.props.children;

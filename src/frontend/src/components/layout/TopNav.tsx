@@ -1,78 +1,111 @@
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Truck } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import LoginButton from '../auth/LoginButton';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About Us' },
-  { href: '/services', label: 'Services' },
-  { href: '/load-board', label: 'Load Board' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/admin', label: 'Admin' },
-];
+import LoginButton from '@/components/auth/LoginButton';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TopNav() {
-  const [open, setOpen] = useState(false);
-  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
-  const isActive = (path: string) => location.pathname === path;
+  const handleLoginSuccess = () => {
+    // After successful login, navigate to home
+    navigate({ to: '/' });
+  };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
-          <Truck className="h-5 w-5 text-primary" />
-          <span className="hidden sm:inline">TruckTrackAfrica</span>
-          <span className="sm:hidden">TTA</span>
-        </Link>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-8">
+          <Link to="/" className="flex items-center space-x-2">
+            <img src="/assets/generated/trucktrack-africa-logo.dim_512x512.png" alt="TruckTrack Africa" className="h-10 w-10" />
+            <span className="font-semibold text-lg">TruckTrack Africa</span>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`px-3 py-2 text-sm font-medium transition-colors rounded-sm hover:bg-muted ${
-                isActive(link.href) ? 'text-foreground bg-muted' : 'text-muted-foreground'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <LoginButton />
-
-          {/* Mobile Navigation */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-2 mt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    to={link.href}
-                    onClick={() => setOpen(false)}
-                    className={`px-3 py-2 text-base font-medium transition-colors rounded-sm hover:bg-muted ${
-                      isActive(link.href) ? 'text-foreground bg-muted' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
+          <nav className="hidden md:flex items-center gap-1">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/">Home</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/about">About</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/services">Services</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/load-board">Load Board</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/contracts">Contracts</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/contact">Contact</Link>
+            </Button>
+          </nav>
         </div>
+
+        <div className="hidden md:flex items-center gap-3">
+          <LoginButton onLoginSuccess={handleLoginSuccess} />
+          {isAuthenticated && (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/register/client">Register as Client</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/register/transporter">Register as Transporter</Link>
+              </Button>
+            </>
+          )}
+        </div>
+
+        <button
+          className="md:hidden p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background">
+          <nav className="container py-4 flex flex-col gap-2">
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/services" onClick={() => setMobileMenuOpen(false)}>Services</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/load-board" onClick={() => setMobileMenuOpen(false)}>Load Board</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/contracts" onClick={() => setMobileMenuOpen(false)}>Contracts</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
+            </Button>
+            <div className="pt-2 border-t mt-2">
+              <LoginButton onLoginSuccess={handleLoginSuccess} />
+              {isAuthenticated && (
+                <div className="flex flex-col gap-2 mt-2">
+                  <Button variant="outline" size="sm" asChild className="justify-start">
+                    <Link to="/register/client" onClick={() => setMobileMenuOpen(false)}>Register as Client</Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild className="justify-start">
+                    <Link to="/register/transporter" onClick={() => setMobileMenuOpen(false)}>Register as Transporter</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

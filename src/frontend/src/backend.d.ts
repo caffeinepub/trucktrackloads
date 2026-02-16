@@ -33,10 +33,10 @@ export interface LiveLocation {
     locationName: string;
 }
 export interface ClientInfo {
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: ClientVerificationStatus;
@@ -45,11 +45,6 @@ export interface TruckTypeOption {
     id: bigint;
     name: string;
     truckType: TruckType;
-}
-export interface ContractDetails {
-    endDate: bigint;
-    contractText: string;
-    startDate: bigint;
 }
 export interface TransporterStatus {
     timestamp: bigint;
@@ -61,11 +56,11 @@ export interface UserApprovalInfo {
 }
 export interface TransporterDetails {
     documents: Array<ExternalBlob>;
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     truckType: TruckType;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: TransporterVerificationStatus;
@@ -78,6 +73,11 @@ export interface TrackingUpdate {
 export interface LoadConfirmation {
     orderId: string;
     confirmationFiles: Array<ExternalBlob>;
+}
+export interface Contract {
+    endDate: bigint;
+    contractText: string;
+    startDate: bigint;
 }
 export interface LocationEvidence {
     transporterId: Principal;
@@ -135,11 +135,14 @@ export interface backendInterface {
     getCallerTransporterDetails(): Promise<TransporterDetails | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getClientContracts(client: Principal): Promise<Array<Contract>>;
     getClientInfo(client: Principal): Promise<ClientInfo | null>;
     getClientLoads(client: Principal): Promise<Array<Load>>;
+    getContracts(): Promise<Array<Contract>>;
     getLoadTracking(loadId: string): Promise<TrackingUpdate | null>;
     getLocationEvidence(transporterId: Principal): Promise<Array<LocationEvidence>>;
     getTransporter(transporter: Principal): Promise<TransporterDetails | null>;
+    getTransporterLoadBoard(): Promise<Array<Load>>;
     getTransporterLoads(transporter: Principal): Promise<Array<Load>>;
     getTransporterStatus(transporterId: Principal): Promise<TransporterStatus | null>;
     getTruckTypeOptions(): Promise<Array<TruckTypeOption>>;
@@ -147,6 +150,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
+    postContract(contract: Contract): Promise<void>;
     registerClient(clientInfo: ClientInfo): Promise<void>;
     registerTransporter(details: TransporterDetails): Promise<void>;
     requestApproval(): Promise<void>;

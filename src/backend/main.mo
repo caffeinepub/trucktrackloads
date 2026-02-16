@@ -11,9 +11,7 @@ import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import Time "mo:core/Time";
 
-
 // Apply migration on upgrade
-
 actor {
   include MixinStorage();
 
@@ -61,7 +59,7 @@ actor {
     message : Text;
   };
 
-  type ContractDetails = {
+  public type Contract = {
     contractText : Text;
     startDate : Int;
     endDate : Int;
@@ -79,7 +77,7 @@ actor {
     email : Text;
     phone : Text;
     address : Text;
-    contract : ContractDetails;
+    contracts : [Contract];
     verificationStatus : ClientVerificationStatus;
   };
 
@@ -101,7 +99,7 @@ actor {
     phone : Text;
     address : Text;
     documents : [Storage.ExternalBlob];
-    contract : ContractDetails;
+    contracts : [Contract];
     verificationStatus : TransporterVerificationStatus;
     truckType : TruckType;
   };
@@ -338,6 +336,27 @@ actor {
     iter.toArray();
   };
 
+  // Transporter loadboard
+  public query ({ caller }) func getTransporterLoadBoard() : async [Load] {
+    if (not isVerifiedTransporter(caller)) {
+      Runtime.trap("Unauthorized: Only transporters can access this route");
+    };
+    let allLoads = loads.values().toArray();
+    allLoads.filter(func(l) { l.isApproved });
+  };
+
+  // Helper function to check if caller is verified transporter
+  func isVerifiedTransporter(caller : Principal) : Bool {
+    switch (transporters.get(caller)) {
+      case (null) {
+        false;
+      };
+      case (?details) {
+        details.verificationStatus == #verified;
+      };
+    };
+  };
+
   public query ({ caller }) func getCallerTransporterDetails() : async ?TransporterDetails {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -391,9 +410,6 @@ actor {
       case (#triaxle or #superlinkFlatdeck or #sideTipper) {
         loads.add(loadId, { load with truckType = load.truckType });
       };
-      case (_) {
-        Runtime.trap("Invalid truck type");
-      };
     };
     loadId;
   };
@@ -415,6 +431,49 @@ actor {
       loads.add(loadId, approved);
     } else {
       loads.remove(loadId);
+    };
+  };
+
+  // Contracts
+  public shared ({ caller }) func postContract(contract : Contract) : async () {
+    switch (clients.get(caller)) {
+      case (null) {
+        Runtime.trap("Client not found");
+      };
+      case (?clientInfo) {
+        if (clientInfo.verificationStatus != #verified) {
+          Runtime.trap("Unauthorized: Only verified clients can post contracts");
+        };
+        let updatedContracts = clientInfo.contracts.concat([contract]);
+        let updatedInfo = { clientInfo with contracts = updatedContracts };
+        clients.add(caller, updatedInfo);
+      };
+    };
+  };
+
+  public query ({ caller }) func getContracts() : async [Contract] {
+    if (not isVerifiedTransporter(caller)) {
+      Runtime.trap("Unauthorized: Only transporters can view contracts");
+    };
+    getAllVerifiedContracts();
+  };
+
+  func getAllVerifiedContracts() : [Contract] {
+    let allClients = clients.values().toArray();
+    let verifiedClients = allClients.filter(func(c) { c.verificationStatus == #verified });
+    verifiedClients.map(
+        func(client) {
+          client.contracts;
+        }
+      ).flatten<Contract>();
+  };
+
+  public query ({ caller }) func getClientContracts(client : Principal) : async [Contract] {
+    switch (clients.get(client)) {
+      case (null) {
+        Runtime.trap("Client not found");
+      };
+      case (?clientInfo) { clientInfo.contracts };
     };
   };
 

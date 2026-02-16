@@ -16,68 +16,66 @@ export default function RequireAdmin({ children }: RequireAdminProps) {
   const handleRetry = () => {
     // Refetch all admin verification queries without full reload
     queryClient.invalidateQueries({ queryKey: ['actor'] });
-    queryClient.invalidateQueries({ queryKey: ['currentUserRole'] });
     queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-    queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
   };
 
   // Use effect for navigation to avoid render-time navigation
   useEffect(() => {
     // Only redirect after loading is complete and we know the user is not authorized
     if (!isLoading && !hasPasswordAdmin) {
-      navigate({ to: '/admin/login' });
+      navigate({ to: '/admin/login', replace: true });
     }
   }, [isLoading, hasPasswordAdmin, navigate]);
 
   useEffect(() => {
     // Redirect non-admin users after verification completes
-    if (!isLoading && hasPasswordAdmin && !isAdmin && !error) {
-      navigate({ to: '/admin/login' });
+    // Only redirect if we have a definitive unauthorized state (not loading, not error)
+    if (!isLoading && hasPasswordAdmin && isAdmin === false && !error) {
+      navigate({ to: '/admin/login', replace: true });
     }
   }, [isLoading, hasPasswordAdmin, isAdmin, error, navigate]);
 
   // No password admin session - show loading while redirect happens
   if (!hasPasswordAdmin) {
     return (
-      <div className="container flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting to login...</p>
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="text-muted-foreground">Checking authorization...</p>
         </div>
       </div>
     );
   }
 
-  // Loading state - persist until all verification is complete
+  // Show error state if verification failed
+  if (error) {
+    return <AdminRouteErrorState onRetry={handleRetry} />;
+  }
+
+  // Show loading while verification is in progress
   if (isLoading) {
     return (
-      <div className="container flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verifying access...</p>
-          <p className="text-xs text-muted-foreground mt-2">This should only take a moment</p>
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="text-muted-foreground">Verifying admin access...</p>
         </div>
       </div>
     );
   }
 
-  // Error state - show error with retry
-  if (error) {
-    return <AdminRouteErrorState error={error} onRetry={handleRetry} />;
+  // Only render children if admin verification passed
+  if (isAdmin) {
+    return <>{children}</>;
   }
 
-  // Not admin - show loading while redirect happens
-  if (!isAdmin) {
-    return (
-      <div className="container flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting to login...</p>
-        </div>
+  // Fallback: show loading while redirect is processing
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+        <p className="text-muted-foreground">Redirecting...</p>
       </div>
-    );
-  }
-
-  // Admin - render dashboard
-  return <>{children}</>;
+    </div>
+  );
 }

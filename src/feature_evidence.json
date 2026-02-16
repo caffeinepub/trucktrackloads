@@ -2,13 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-password-based-admin-session-initialization-so-that-the-admin-dashboard-can-be-opened-even-when-the-user-is-not-authenticated-with-internet-identity-when-a-sessionstorage-key-caffeineadmintoken-exists-the-frontend-must-create-an-actor-and-call-backend-initializeaccesscontrolwithsecret-with-that-token-regardless-of-internet-identity-auth-state",
-      "featureTitle": "Fix the password-based admin session initialization so that the admin dashboard can be opened even when the user is not authenticated with Internet Identity: when a sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token, regardless of Internet Identity auth state.",
+      "featureId": "feature-fix-the-password-based-admin-session-flow-so-that-after-a-successful-admin-login-navigating-to-admin-reliably-renders-the-admin-dashboard-instead-of-redirecting-back-to-admin-login-or-showing-an-access-denied-state",
+      "featureTitle": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
       "files": [
-        "frontend/src/hooks/useAdminToken.ts",
+        "frontend/src/components/auth/RequireAdmin.tsx",
         "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminDashboardPage.tsx",
-        "frontend/src/utils/urlParams.ts"
+        "frontend/src/pages/AdminPasswordLoginPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -26,11 +25,9 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-frontend-recreates-refetches-the-actor-and-all-admin-verification-queries-when-the-password-admin-token-changes-the-actor-query-key-must-incorporate-the-current-caffeineadmintoken-value-or-an-equivalent-reactive-signal-and-token-updates-triggered-by-storing-clearing-the-token-must-cause-admin-checks-e-g-iscalleradmin-to-re-run-with-the-updated-token",
-      "featureTitle": "Ensure the frontend recreates/refetches the actor and all admin-verification queries when the password-admin token changes: the actor query key must incorporate the current \"caffeineAdminToken\" value (or an equivalent reactive signal), and token updates triggered by storing/clearing the token must cause admin checks (e.g., isCallerAdmin) to re-run with the updated token.",
+      "featureId": "feature-ensure-that-a-password-admin-session-initializes-backend-authorization-with-the-admin-token-even-when-the-user-is-not-authenticated-via-internet-identity-i-e-when-the-app-is-using-an-anonymous-identity-so-that-admin-verification-queries-e-g-iscalleradmin-succeed-immediately-after-login",
+      "featureTitle": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
       "files": [
-        "frontend/src/components/auth/AdminRouteErrorState.tsx",
-        "frontend/src/hooks/useAuth.ts",
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/AdminPasswordLoginPage.tsx"
       ],
@@ -50,11 +47,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-admin-route-navigation-guard-behavior-so-it-does-not-block-or-fail-to-render-the-admin-dashboard-remove-any-imperative-navigation-calls-performed-during-render-in-the-admin-guard-and-ensure-redirects-to-admin-login-only-occur-after-the-token-auth-state-has-been-evaluated-to-avoid-redirect-loops-or-blank-screens",
-      "featureTitle": "Fix admin-route navigation/guard behavior so it does not block or fail to render the admin dashboard: remove any imperative navigation calls performed during render in the admin guard and ensure redirects to \"/admin/login\" only occur after the token/auth state has been evaluated (to avoid redirect loops or blank screens).",
+      "featureId": "feature-update-admin-route-guarding-and-admin-login-handling-to-remove-timing-race-dependencies-e-g-fixed-settimeout-delays-and-instead-rely-on-explicit-state-transitions-token-stored-admin-verification-refetched-navigation-so-the-experience-is-consistent-across-devices-and-network-speeds",
+      "featureTitle": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
       "files": [
-        "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-        "frontend/src/components/auth/RequireAdmin.tsx"
+        "frontend/src/components/auth/AdminRouteErrorState.tsx",
+        "frontend/src/components/auth/RequireAdmin.tsx",
+        "frontend/src/pages/AdminPasswordLoginPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -68,29 +66,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-routing-configuration-so-that-post-login-navigation-to-the-admin-dashboard-works-in-the-deployed-environment-the-router-must-consistently-use-the-intended-history-mode-hash-based-routing-so-that-navigating-to-admin-from-the-login-page-actually-loads-the-admin-route-in-production-builds",
-      "featureTitle": "Fix routing configuration so that post-login navigation to the admin dashboard works in the deployed environment: the router must consistently use the intended history mode (hash-based routing) so that navigating to \"/admin\" from the login page actually loads the admin route in production builds.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx",
-        "frontend/src/routeTree.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -36,20 +36,19 @@ export function useAuth() {
   
   // Loading logic:
   // - Always loading during initialization
-  // - If authenticated, wait for role/profile/admin verification to complete
+  // - If authenticated, wait for role/profile to complete (but not admin check for II users)
   // - If password admin session exists, wait for admin verification
   // - If not authenticated and no password admin, not loading (no verification needed)
   const isLoading = loginStatus === 'initializing' || 
-    (isAuthenticated && (profileLoading || roleLoading || adminCheckLoading)) ||
+    (isAuthenticated && (profileLoading || roleLoading)) ||
     (hasPasswordAdmin && adminCheckLoading);
   
   // Compute isAdmin:
-  // - For password admin sessions: only check isCallerAdmin
-  // - For Internet Identity: check both role and isCallerAdmin
+  // - For password admin sessions: ONLY check isCallerAdmin (ignore II completely)
+  // - For Internet Identity: never grant admin access (admin must use password login)
   const isAdmin = hasPasswordAdmin 
     ? (adminCheckFetched && isCallerAdmin === true)
-    : (isAuthenticated && 
-        ((roleFetched && userRole === 'admin') || (adminCheckFetched && isCallerAdmin === true)));
+    : false;
 
   // Show profile setup only when authenticated and profile is confirmed null
   const showProfileSetup = isAuthenticated && !profileLoading && profileFetched && userProfile === null;

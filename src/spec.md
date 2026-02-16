@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Make credential-based (password token) admin login reliably open the admin dashboard without redirect loops, and ensure routing works consistently in production.
+**Goal:** Fix the password-based admin login/session flow so authenticated admins can reliably access and stay on the `/admin` dashboard after logging in, without redirect loops or timing issues.
 
 **Planned changes:**
-- Initialize the admin session from `sessionStorage.caffeineAdminToken` even when the user is not authenticated with Internet Identity by creating an actor and calling backend `_initializeAccessControlWithSecret` with the stored token.
-- Make actor creation and admin verification queries reactive to `caffeineAdminToken` changes by incorporating the current token into the actor/query key so admin checks re-run after login/logout without a page refresh.
-- Fix the admin route guard to avoid navigation during render and only redirect to `/admin/login` after token/auth state has been evaluated, preventing blank screens and redirect loops.
-- Align routing configuration to consistently use hash-based routing so navigation to `/admin` works after login and when directly opening the admin URL in deployed builds.
+- Update `/admin/login` handling to store the admin token, then explicitly refetch/verify admin authorization before navigating to `/admin` (no fixed delays).
+- Adjust `/admin` route guarding to rely on clear state transitions (token present + verification result) so it does not redirect back to `/admin/login` after a successful password-admin login.
+- Ensure admin verification uses an actor initialized with `_initializeAccessControlWithSecret(token)` whenever `sessionStorage.caffeineAdminToken` is present, even when the user is anonymous (not logged in via Internet Identity), without editing immutable hook paths.
+- Add a clear English error state when post-login admin verification fails, including a working Retry action that re-attempts verification.
+- Verify and, if needed, fix backend admin verification so `adminLogin` tokens correctly cause `isCallerAdmin()` to return `true` after `_initializeAccessControlWithSecret(token)`, while keeping admin-only methods protected without valid verification.
 
-**User-visible outcome:** Visiting `/admin` opens the Admin Dashboard when a valid `caffeineAdminToken` exists (or shows a clear verification error), redirects to `/admin/login` when no token is present, and post-login navigation reliably loads the dashboard in production without requiring a refresh.
+**User-visible outcome:** After entering correct admin credentials on `/admin/login`, the user is taken to `/admin` and the dashboard renders reliably; refreshing `/admin` stays authorized for the browser session, and logging out/clearing the token redirects back to `/admin/login` without infinite loops.

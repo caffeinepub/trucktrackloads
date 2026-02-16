@@ -112,10 +112,10 @@ export interface LiveLocation {
     locationName: string;
 }
 export interface ClientInfo {
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: ClientVerificationStatus;
@@ -127,11 +127,6 @@ export interface TruckTypeOption {
     id: bigint;
     name: string;
     truckType: TruckType;
-}
-export interface ContractDetails {
-    endDate: bigint;
-    contractText: string;
-    startDate: bigint;
 }
 export interface _CaffeineStorageCreateCertificateResult {
     method: string;
@@ -147,11 +142,11 @@ export interface UserApprovalInfo {
 }
 export interface TransporterDetails {
     documents: Array<ExternalBlob>;
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     truckType: TruckType;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: TransporterVerificationStatus;
@@ -164,6 +159,11 @@ export interface TrackingUpdate {
 export interface LoadConfirmation {
     orderId: string;
     confirmationFiles: Array<ExternalBlob>;
+}
+export interface Contract {
+    endDate: bigint;
+    contractText: string;
+    startDate: bigint;
 }
 export interface LocationEvidence {
     transporterId: Principal;
@@ -228,11 +228,14 @@ export interface backendInterface {
     getCallerTransporterDetails(): Promise<TransporterDetails | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getClientContracts(client: Principal): Promise<Array<Contract>>;
     getClientInfo(client: Principal): Promise<ClientInfo | null>;
     getClientLoads(client: Principal): Promise<Array<Load>>;
+    getContracts(): Promise<Array<Contract>>;
     getLoadTracking(loadId: string): Promise<TrackingUpdate | null>;
     getLocationEvidence(transporterId: Principal): Promise<Array<LocationEvidence>>;
     getTransporter(transporter: Principal): Promise<TransporterDetails | null>;
+    getTransporterLoadBoard(): Promise<Array<Load>>;
     getTransporterLoads(transporter: Principal): Promise<Array<Load>>;
     getTransporterStatus(transporterId: Principal): Promise<TransporterStatus | null>;
     getTruckTypeOptions(): Promise<Array<TruckTypeOption>>;
@@ -240,6 +243,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
+    postContract(contract: Contract): Promise<void>;
     registerClient(clientInfo: ClientInfo): Promise<void>;
     registerTransporter(details: TransporterDetails): Promise<void>;
     requestApproval(): Promise<void>;
@@ -256,7 +260,7 @@ export interface backendInterface {
     verifyClient(client: Principal, status: ClientVerificationStatus): Promise<void>;
     verifyTransporter(transporter: Principal, status: TransporterVerificationStatus): Promise<void>;
 }
-import type { ApprovalStatus as _ApprovalStatus, ClientInfo as _ClientInfo, ClientVerificationStatus as _ClientVerificationStatus, ContractDetails as _ContractDetails, ExternalBlob as _ExternalBlob, LiveLocation as _LiveLocation, Load as _Load, LoadConfirmation as _LoadConfirmation, LocationEvidence as _LocationEvidence, TrackingUpdate as _TrackingUpdate, TransporterDetails as _TransporterDetails, TransporterStatus as _TransporterStatus, TransporterVerificationStatus as _TransporterVerificationStatus, TruckType as _TruckType, TruckTypeOption as _TruckTypeOption, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { ApprovalStatus as _ApprovalStatus, ClientInfo as _ClientInfo, ClientVerificationStatus as _ClientVerificationStatus, Contract as _Contract, ExternalBlob as _ExternalBlob, LiveLocation as _LiveLocation, Load as _Load, LoadConfirmation as _LoadConfirmation, LocationEvidence as _LocationEvidence, TrackingUpdate as _TrackingUpdate, TransporterDetails as _TransporterDetails, TransporterStatus as _TransporterStatus, TransporterVerificationStatus as _TransporterVerificationStatus, TruckType as _TruckType, TruckTypeOption as _TruckTypeOption, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
@@ -623,6 +627,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n45(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getClientContracts(arg0: Principal): Promise<Array<Contract>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClientContracts(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClientContracts(arg0);
+            return result;
+        }
+    }
     async getClientInfo(arg0: Principal): Promise<ClientInfo | null> {
         if (this.processError) {
             try {
@@ -649,6 +667,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getClientLoads(arg0);
             return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getContracts(): Promise<Array<Contract>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getContracts();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getContracts();
+            return result;
         }
     }
     async getLoadTracking(arg0: string): Promise<TrackingUpdate | null> {
@@ -691,6 +723,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getTransporter(arg0);
             return from_candid_opt_n43(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getTransporterLoadBoard(): Promise<Array<Load>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTransporterLoadBoard();
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTransporterLoadBoard();
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async getTransporterLoads(arg0: Principal): Promise<Array<Load>> {
@@ -789,6 +835,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.listApprovals();
             return from_candid_vec_n54(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async postContract(arg0: Contract): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.postContract(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.postContract(arg0);
+            return result;
         }
     }
     async registerClient(arg0: ClientInfo): Promise<void> {
@@ -1123,27 +1183,27 @@ async function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promi
     };
 }
 function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    contract: _ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<_Contract>;
     address: string;
     phone: string;
     verificationStatus: _ClientVerificationStatus;
 }): {
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: ClientVerificationStatus;
 } {
     return {
-        contract: value.contract,
         contactPerson: value.contactPerson,
         email: value.email,
         company: value.company,
+        contracts: value.contracts,
         address: value.address,
         phone: value.phone,
         verificationStatus: from_candid_ClientVerificationStatus_n32(_uploadFile, _downloadFile, value.verificationStatus)
@@ -1151,32 +1211,32 @@ function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 async function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     documents: Array<_ExternalBlob>;
-    contract: _ContractDetails;
     contactPerson: string;
     email: string;
     truckType: _TruckType;
     company: string;
+    contracts: Array<_Contract>;
     address: string;
     phone: string;
     verificationStatus: _TransporterVerificationStatus;
 }): Promise<{
     documents: Array<ExternalBlob>;
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     truckType: TruckType;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: TransporterVerificationStatus;
 }> {
     return {
         documents: await from_candid_vec_n27(_uploadFile, _downloadFile, value.documents),
-        contract: value.contract,
         contactPerson: value.contactPerson,
         email: value.email,
         truckType: from_candid_TruckType_n21(_uploadFile, _downloadFile, value.truckType),
         company: value.company,
+        contracts: value.contracts,
         address: value.address,
         phone: value.phone,
         verificationStatus: from_candid_TransporterVerificationStatus_n37(_uploadFile, _downloadFile, value.verificationStatus)
@@ -1400,27 +1460,27 @@ function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     };
 }
 function to_candid_record_n60(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: ClientVerificationStatus;
 }): {
-    contract: _ContractDetails;
     contactPerson: string;
     email: string;
     company: string;
+    contracts: Array<_Contract>;
     address: string;
     phone: string;
     verificationStatus: _ClientVerificationStatus;
 } {
     return {
-        contract: value.contract,
         contactPerson: value.contactPerson,
         email: value.email,
         company: value.company,
+        contracts: value.contracts,
         address: value.address,
         phone: value.phone,
         verificationStatus: to_candid_ClientVerificationStatus_n61(_uploadFile, _downloadFile, value.verificationStatus)
@@ -1428,32 +1488,32 @@ function to_candid_record_n60(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 }
 async function to_candid_record_n64(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     documents: Array<ExternalBlob>;
-    contract: ContractDetails;
     contactPerson: string;
     email: string;
     truckType: TruckType;
     company: string;
+    contracts: Array<Contract>;
     address: string;
     phone: string;
     verificationStatus: TransporterVerificationStatus;
 }): Promise<{
     documents: Array<_ExternalBlob>;
-    contract: _ContractDetails;
     contactPerson: string;
     email: string;
     truckType: _TruckType;
     company: string;
+    contracts: Array<_Contract>;
     address: string;
     phone: string;
     verificationStatus: _TransporterVerificationStatus;
 }> {
     return {
         documents: await to_candid_vec_n17(_uploadFile, _downloadFile, value.documents),
-        contract: value.contract,
         contactPerson: value.contactPerson,
         email: value.email,
         truckType: to_candid_TruckType_n13(_uploadFile, _downloadFile, value.truckType),
         company: value.company,
+        contracts: value.contracts,
         address: value.address,
         phone: value.phone,
         verificationStatus: to_candid_TransporterVerificationStatus_n65(_uploadFile, _downloadFile, value.verificationStatus)

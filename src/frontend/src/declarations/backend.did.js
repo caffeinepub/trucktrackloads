@@ -57,7 +57,7 @@ export const Load = IDL.Record({
   'confirmation' : LoadConfirmation,
   'offloadingLocation' : IDL.Text,
 });
-export const ContractDetails = IDL.Record({
+export const Contract = IDL.Record({
   'endDate' : IDL.Int,
   'contractText' : IDL.Text,
   'startDate' : IDL.Int,
@@ -68,10 +68,10 @@ export const ClientVerificationStatus = IDL.Variant({
   'rejected' : IDL.Null,
 });
 export const ClientInfo = IDL.Record({
-  'contract' : ContractDetails,
   'contactPerson' : IDL.Text,
   'email' : IDL.Text,
   'company' : IDL.Text,
+  'contracts' : IDL.Vec(Contract),
   'address' : IDL.Text,
   'phone' : IDL.Text,
   'verificationStatus' : ClientVerificationStatus,
@@ -92,11 +92,11 @@ export const TransporterVerificationStatus = IDL.Variant({
 });
 export const TransporterDetails = IDL.Record({
   'documents' : IDL.Vec(ExternalBlob),
-  'contract' : ContractDetails,
   'contactPerson' : IDL.Text,
   'email' : IDL.Text,
   'truckType' : TruckType,
   'company' : IDL.Text,
+  'contracts' : IDL.Vec(Contract),
   'address' : IDL.Text,
   'phone' : IDL.Text,
   'verificationStatus' : TransporterVerificationStatus,
@@ -194,8 +194,14 @@ export const idlService = IDL.Service({
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getClientContracts' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(Contract)],
+      ['query'],
+    ),
   'getClientInfo' : IDL.Func([IDL.Principal], [IDL.Opt(ClientInfo)], ['query']),
   'getClientLoads' : IDL.Func([IDL.Principal], [IDL.Vec(Load)], ['query']),
+  'getContracts' : IDL.Func([], [IDL.Vec(Contract)], ['query']),
   'getLoadTracking' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(TrackingUpdate)],
@@ -211,6 +217,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(TransporterDetails)],
       ['query'],
     ),
+  'getTransporterLoadBoard' : IDL.Func([], [IDL.Vec(Load)], ['query']),
   'getTransporterLoads' : IDL.Func([IDL.Principal], [IDL.Vec(Load)], ['query']),
   'getTransporterStatus' : IDL.Func(
       [IDL.Principal],
@@ -226,6 +233,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
   'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+  'postContract' : IDL.Func([Contract], [], []),
   'registerClient' : IDL.Func([ClientInfo], [], []),
   'registerTransporter' : IDL.Func([TransporterDetails], [], []),
   'requestApproval' : IDL.Func([], [], []),
@@ -299,7 +307,7 @@ export const idlFactory = ({ IDL }) => {
     'confirmation' : LoadConfirmation,
     'offloadingLocation' : IDL.Text,
   });
-  const ContractDetails = IDL.Record({
+  const Contract = IDL.Record({
     'endDate' : IDL.Int,
     'contractText' : IDL.Text,
     'startDate' : IDL.Int,
@@ -310,10 +318,10 @@ export const idlFactory = ({ IDL }) => {
     'rejected' : IDL.Null,
   });
   const ClientInfo = IDL.Record({
-    'contract' : ContractDetails,
     'contactPerson' : IDL.Text,
     'email' : IDL.Text,
     'company' : IDL.Text,
+    'contracts' : IDL.Vec(Contract),
     'address' : IDL.Text,
     'phone' : IDL.Text,
     'verificationStatus' : ClientVerificationStatus,
@@ -334,11 +342,11 @@ export const idlFactory = ({ IDL }) => {
   });
   const TransporterDetails = IDL.Record({
     'documents' : IDL.Vec(ExternalBlob),
-    'contract' : ContractDetails,
     'contactPerson' : IDL.Text,
     'email' : IDL.Text,
     'truckType' : TruckType,
     'company' : IDL.Text,
+    'contracts' : IDL.Vec(Contract),
     'address' : IDL.Text,
     'phone' : IDL.Text,
     'verificationStatus' : TransporterVerificationStatus,
@@ -440,12 +448,18 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getClientContracts' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(Contract)],
+        ['query'],
+      ),
     'getClientInfo' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(ClientInfo)],
         ['query'],
       ),
     'getClientLoads' : IDL.Func([IDL.Principal], [IDL.Vec(Load)], ['query']),
+    'getContracts' : IDL.Func([], [IDL.Vec(Contract)], ['query']),
     'getLoadTracking' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(TrackingUpdate)],
@@ -461,6 +475,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(TransporterDetails)],
         ['query'],
       ),
+    'getTransporterLoadBoard' : IDL.Func([], [IDL.Vec(Load)], ['query']),
     'getTransporterLoads' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(Load)],
@@ -480,6 +495,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
     'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
+    'postContract' : IDL.Func([Contract], [], []),
     'registerClient' : IDL.Func([ClientInfo], [], []),
     'registerTransporter' : IDL.Func([TransporterDetails], [], []),
     'requestApproval' : IDL.Func([], [], []),

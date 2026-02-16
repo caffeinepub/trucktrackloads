@@ -1,48 +1,49 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Project experiencing an issue where admin users cannot access the admin/dashboard after logging in.",
   "architectural_notes": [],
   "known_issues": [
-    "Admin dashboard redirect/page does not open after the latest deployment (reported by user)."
+    "Admin users cannot access the admin/dashboard after logging in."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-password-based-admin-session-initialization-so-that-the-admin-dashboard-can-be-opened-even-when-the-user-is-not-authenticated-with-internet-identity-when-a-sessionstorage-key-caffeineadmintoken-exists-the-frontend-must-create-an-actor-and-call-backend-initializeaccesscontrolwithsecret-with-that-token-regardless-of-internet-identity-auth-state",
-      "title": "Fix the password-based admin session initialization so that the admin dashboard can be opened even when the user is not authenticated with Internet Identity: when a sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token, regardless of Internet Identity auth state.",
+      "id": "feature-fix-the-password-based-admin-session-flow-so-that-after-a-successful-admin-login-navigating-to-admin-reliably-renders-the-admin-dashboard-instead-of-redirecting-back-to-admin-login-or-showing-an-access-denied-state",
+      "title": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-frontend-recreates-refetches-the-actor-and-all-admin-verification-queries-when-the-password-admin-token-changes-the-actor-query-key-must-incorporate-the-current-caffeineadmintoken-value-or-an-equivalent-reactive-signal-and-token-updates-triggered-by-storing-clearing-the-token-must-cause-admin-checks-e-g-iscalleradmin-to-re-run-with-the-updated-token",
-      "title": "Ensure the frontend recreates/refetches the actor and all admin-verification queries when the password-admin token changes: the actor query key must incorporate the current \"caffeineAdminToken\" value (or an equivalent reactive signal), and token updates triggered by storing/clearing the token must cause admin checks (e.g., isCallerAdmin) to re-run with the updated token.",
+      "id": "feature-ensure-that-a-password-admin-session-initializes-backend-authorization-with-the-admin-token-even-when-the-user-is-not-authenticated-via-internet-identity-i-e-when-the-app-is-using-an-anonymous-identity-so-that-admin-verification-queries-e-g-iscalleradmin-succeed-immediately-after-login",
+      "title": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-admin-route-navigation-guard-behavior-so-it-does-not-block-or-fail-to-render-the-admin-dashboard-remove-any-imperative-navigation-calls-performed-during-render-in-the-admin-guard-and-ensure-redirects-to-admin-login-only-occur-after-the-token-auth-state-has-been-evaluated-to-avoid-redirect-loops-or-blank-screens",
-      "title": "Fix admin-route navigation/guard behavior so it does not block or fail to render the admin dashboard: remove any imperative navigation calls performed during render in the admin guard and ensure redirects to \"/admin/login\" only occur after the token/auth state has been evaluated (to avoid redirect loops or blank screens).",
+      "id": "feature-update-admin-route-guarding-and-admin-login-handling-to-remove-timing-race-dependencies-e-g-fixed-settimeout-delays-and-instead-rely-on-explicit-state-transitions-token-stored-admin-verification-refetched-navigation-so-the-experience-is-consistent-across-devices-and-network-speeds",
+      "title": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
-    },
+    }
+  ],
+  "new_feature_requests": [
     {
-      "id": "feature-fix-routing-configuration-so-that-post-login-navigation-to-the-admin-dashboard-works-in-the-deployed-environment-the-router-must-consistently-use-the-intended-history-mode-hash-based-routing-so-that-navigating-to-admin-from-the-login-page-actually-loads-the-admin-route-in-production-builds",
-      "title": "Fix routing configuration so that post-login navigation to the admin dashboard works in the deployed environment: the router must consistently use the intended history mode (hash-based routing) so that navigating to \"/admin\" from the login page actually loads the admin route in production builds.",
+      "id": "AR-4",
+      "summary": "Verify and, if needed, fix backend admin verification so that the token returned by `adminLogin(username, password)` results in `isCallerAdmin()` returning `true` for the session after the frontend has initialized access control with `_initializeAccessControlWithSecret(token)`.",
       "reqIds": [
         "REQ-4"
       ],
-      "version": 1
+      "status": "pending"
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix admin credential login so the admin dashboard opens reliably",
+  "projectName": "Fix password-admin login so users can access /admin dashboard after logging in",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

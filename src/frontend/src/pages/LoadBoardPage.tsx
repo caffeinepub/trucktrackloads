@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { useCreateLoad, useGetAllApprovedLoads, useGetClientLoads, useGetCallerClientInfo, useGetTruckTypeOptions, useGetCallerTransporterDetails } from '@/hooks/useQueries';
+import { useCreateLoad, useGetTransporterLoadBoard, useGetClientLoads, useGetCallerClientInfo, useGetTruckTypeOptions, useGetCallerTransporterDetails } from '@/hooks/useQueries';
 import { toast } from 'sonner';
-import { Loader2, Package, Weight, FileText, AlertCircle, Truck, Heart } from 'lucide-react';
+import { Loader2, Package, Weight, FileText, AlertCircle, Truck, Heart, CheckCircle } from 'lucide-react';
 import ProfileSetupModal from '@/components/auth/ProfileSetupModal';
 import LoadInterestEvidenceDialog from '@/components/loads/LoadInterestEvidenceDialog';
 import { ExternalBlob, ClientVerificationStatus, TruckType } from '../backend';
@@ -20,7 +20,7 @@ import { Link } from '@tanstack/react-router';
 
 export default function LoadBoardPage() {
   const { isAuthenticated, showProfileSetup, identity } = useAuth();
-  const { data: approvedLoads = [], isLoading: loadsLoading } = useGetAllApprovedLoads();
+  const { data: transporterLoadBoard = [], isLoading: transporterLoadBoardLoading } = useGetTransporterLoadBoard();
   const { data: myLoads = [], isLoading: myLoadsLoading } = useGetClientLoads(
     identity?.getPrincipal() || null
   );
@@ -145,11 +145,32 @@ export default function LoadBoardPage() {
                   Please <Link to="/" className="text-primary hover:underline">log in</Link> to view available loads.
                 </AlertDescription>
               </Alert>
-            ) : loadsLoading ? (
+            ) : !isVerifiedTransporter ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Only verified transporters can browse available loads.
+                  {!transporterDetails ? (
+                    <>
+                      {' '}Please{' '}
+                      <Link to="/register/transporter" className="underline font-medium">
+                        register as a transporter
+                      </Link>{' '}
+                      to access the load board.
+                    </>
+                  ) : (
+                    <>
+                      {' '}Your transporter account is pending verification.
+                      Current status: <Badge variant="outline" className="ml-2">{transporterDetails.verificationStatus}</Badge>
+                    </>
+                  )}
+                </AlertDescription>
+              </Alert>
+            ) : transporterLoadBoardLoading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : approvedLoads.length === 0 ? (
+            ) : transporterLoadBoard.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -158,7 +179,7 @@ export default function LoadBoardPage() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {approvedLoads.map((load, index) => (
+                {transporterLoadBoard.map((load, index) => (
                   <Card key={index}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -190,17 +211,15 @@ export default function LoadBoardPage() {
                         offloadingLocation={load.offloadingLocation}
                       />
 
-                      {isVerifiedTransporter && (
-                        <Button
-                          onClick={() => handleExpressInterest(load.description)}
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto"
-                        >
-                          <Heart className="h-4 w-4 mr-2" />
-                          Express Interest
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => handleExpressInterest(load.description)}
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <Heart className="h-4 w-4 mr-2" />
+                        Express Interest
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -408,6 +427,15 @@ export default function LoadBoardPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {load.isApproved && (
+                        <Alert className="bg-green-50 border-green-200">
+                          <CheckCircle className="h-4 w-4 text-green-700" />
+                          <AlertDescription className="text-green-700">
+                            <strong>Public / Visible to transporters</strong> - This load is now visible on the load board and transporters can express interest.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                           <Weight className="h-4 w-4 text-muted-foreground" />
@@ -425,6 +453,13 @@ export default function LoadBoardPage() {
                         loadingLocation={load.loadingLocation}
                         offloadingLocation={load.offloadingLocation}
                       />
+
+                      {load.confirmation.orderId && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Order ID:</span>{' '}
+                          <span className="font-medium">{load.confirmation.orderId}</span>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

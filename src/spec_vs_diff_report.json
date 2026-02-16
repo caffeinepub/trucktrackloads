@@ -1,61 +1,50 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T13:51:34.571Z",
-  "summary": "REQ-3 and REQ-4 appear implemented (admin guard navigation moved to effects; router configured with hash history). REQ-1 is not evidenced (no call to backend _initializeAccessControlWithSecret using the sessionStorage token regardless of Internet Identity). REQ-2 is partially implemented for admin-verification queries (query key includes token and token changes are reactive), but actor recreation/refetch keyed on the token is not evidenced.",
+  "generatedAt": "2026-02-16T15:02:33.639Z",
+  "summary": "Core admin-flow changes were implemented (admin verification query initializes access control with the stored token; new admin error/retry UI; updated admin route guard). However, the admin login handler still uses a fixed setTimeout delay, which conflicts with the requirement to remove timing/race dependencies. The diff also contains multiple unrelated frontend changes (contracts route/nav, copy updates, load board restrictions, etc.) not requested by the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "When sessionStorage key \"caffeineAdminToken\" exists, the frontend must create an actor and call backend \"_initializeAccessControlWithSecret\" with that token regardless of Internet Identity auth state.",
-      "reason": "In the provided diff summary, there is no evidence of any call to backend method \"_initializeAccessControlWithSecret\" nor any actor initialization path that uses the stored token when Internet Identity is not present.",
+      "id": "REQ-3",
+      "requirement": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed setTimeout delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation).",
+      "reason": "Admin password login still contains an explicit delay (setTimeout) after storing the token, indicating continued reliance on arbitrary timing rather than only explicit state transitions/refetch completion.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/hooks/useAuth.ts",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx",
-        "frontend/src/hooks/useAdminToken.ts"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Ensure the frontend recreates/refetches the actor when the password-admin token changes (actor query key incorporates current \"caffeineAdminToken\" value or equivalent reactive signal).",
-      "reason": "While admin-verification query keys incorporate the token (e.g., ['isCallerAdmin', adminToken]), the diff does not show any change to actor creation or its query key to incorporate the token; useActor changes (where actor creation likely happens) are not evidenced in the diff.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx",
-        "frontend/src/hooks/useAdminToken.ts"
+        "frontend/src/pages/AdminPasswordLoginPage.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced an AdminRouteErrorBoundary and a detailed AdminRouteErrorState UI with retry/sign-out flows and support contact email.",
-      "reason": "BuildRequest focuses on making existing credential-based admin login reliably open the dashboard and fixing routing/guards; adding new error boundary components and expanded error UI is not explicitly requested (though an error state is mentioned as acceptable behavior).",
-      "evidence": [
-        "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-        "frontend/src/components/auth/AdminRouteErrorState.tsx"
-      ]
-    },
-    {
-      "description": "Multiple unrelated content/UI updates across non-admin pages (e.g., coverage areas text changes, contact details changes, load board/registration behavior updates) as described in the repo's frontend-file-summaries.",
-      "reason": "The BuildRequest explicitly states a non-goal of adding new admin features beyond fixing login reliability; broad unrelated page/content changes are not requested.",
+      "description": "Added/updated general site features and content unrelated to admin login (e.g., new /contracts route and navigation links, coverage-area text updates, contact details updates).",
+      "reason": "BuildRequest is narrowly scoped to fixing password-admin login/session/authorization; these changes are not requested requirements or acceptance criteria.",
       "evidence": [
         "frontend-file-summaries.txt"
       ]
+    },
+    {
+      "description": "Modified load board behavior to restrict Browse Loads to verified transporters and added related UI indicators.",
+      "reason": "Not part of the admin login/session fix scope or any listed requirements.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Backend method updateCredentials added/modified for changing admin credentials.",
+      "reason": "The BuildRequest explicitly lists changing admin credentials / adding rotation UI as non-goals; adding credential-update capability is outside the requested scope.",
+      "evidence": [
+        "backend/main.mo"
+      ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.74,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
     "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
     "frontend/src/components/auth/AdminRouteErrorState.tsx",
     "frontend/src/components/auth/RequireAdmin.tsx",
-    "frontend/src/hooks/useAdminToken.ts",
-    "frontend/src/hooks/useAuth.ts",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AdminDashboardPage.tsx",
     "frontend/src/pages/AdminPasswordLoginPage.tsx",
-    "frontend/src/routeTree.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

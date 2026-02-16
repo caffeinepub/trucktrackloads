@@ -4,38 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { useGetCallerTransporterDetails, useRegisterTransporter, useGetTruckTypeOptions } from '@/hooks/useQueries';
+import { useRegisterTransporter, useGetCallerTransporterDetails, useGetTruckTypeOptions } from '@/hooks/useQueries';
 import { toast } from 'sonner';
-import { Loader2, FileCheck, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, Building2, User, Mail, Phone, MapPin, FileText, Upload, AlertCircle, CheckCircle, Truck } from 'lucide-react';
 import ProfileSetupModal from '@/components/auth/ProfileSetupModal';
+import { ExternalBlob, ClientVerificationStatus, TruckType } from '../backend';
+import { Link } from '@tanstack/react-router';
 import LiveLocationToggleCard from '@/components/transporter/LiveLocationToggleCard';
 import TransporterStatusCard from '@/components/transporter/TransporterStatusCard';
-import { ExternalBlob, ClientVerificationStatus, TruckType } from '../backend';
-
-// TransporterVerificationStatus has the same shape as ClientVerificationStatus
-type TransporterVerificationStatus = ClientVerificationStatus;
-const TransporterVerificationStatus = ClientVerificationStatus;
-
-const REQUIRED_DOCUMENTS = [
-  'Company Registration Certificate',
-  'Tax Clearance Certificate',
-  'Insurance Certificate',
-  'Vehicle Registration',
-  'Driver License',
-  'Operating License',
-  'Safety Certificate',
-  'Proof of Address',
-];
 
 export default function TransporterRegistrationPage() {
   const { isAuthenticated, showProfileSetup } = useAuth();
-  const { data: existingDetails, isLoading: loadingDetails } = useGetCallerTransporterDetails();
-  const { data: truckTypeOptions = [] } = useGetTruckTypeOptions();
+  const { data: existingDetails, isLoading: detailsLoading } = useGetCallerTransporterDetails();
+  const { data: truckTypeOptions = [], isLoading: truckTypesLoading } = useGetTruckTypeOptions();
   const registerTransporter = useRegisterTransporter();
 
   const [company, setCompany] = useState('');
@@ -44,11 +29,11 @@ export default function TransporterRegistrationPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [contractDetails, setContractDetails] = useState('');
-  const [selectedTruckType, setSelectedTruckType] = useState<TruckType | ''>('');
+  const [contractStartDate, setContractStartDate] = useState('');
+  const [contractEndDate, setContractEndDate] = useState('');
   const [documents, setDocuments] = useState<ExternalBlob[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
-
-  const isVerified = existingDetails?.verificationStatus === TransporterVerificationStatus.verified;
+  const [selectedTruckType, setSelectedTruckType] = useState<TruckType | ''>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (existingDetails) {
@@ -57,29 +42,28 @@ export default function TransporterRegistrationPage() {
       setEmail(existingDetails.email);
       setPhone(existingDetails.phone);
       setAddress(existingDetails.address);
-      setContractDetails(existingDetails.contract?.contractText || '');
-      setSelectedTruckType(existingDetails.truckType || '');
-      setDocuments(existingDetails.documents || []);
+      setSelectedTruckType(existingDetails.truckType);
+      setDocuments(existingDetails.documents);
+      // Load first contract if exists
+      if (existingDetails.contracts.length > 0) {
+        setContractDetails(existingDetails.contracts[0].contractText || '');
+      }
     }
   }, [existingDetails]);
 
-  const handleFileUpload = async (index: number, file: File) => {
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      
-      const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-        setUploadProgress((prev) => ({ ...prev, [index]: percentage }));
-      });
-
-      const newDocuments = [...documents];
-      newDocuments[index] = blob;
-      setDocuments(newDocuments);
-      
-      toast.success(`${REQUIRED_DOCUMENTS[index]} uploaded successfully`);
+      const blob = ExternalBlob.fromBytes(uint8Array);
+      setDocuments((prev) => [...prev, blob]);
+      toast.success('Document uploaded successfully');
     } catch (error) {
-      toast.error(`Failed to upload ${REQUIRED_DOCUMENTS[index]}`);
+      toast.error('Failed to upload document');
       console.error(error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -87,19 +71,17 @@ export default function TransporterRegistrationPage() {
     e.preventDefault();
 
     if (!isAuthenticated) {
-      toast.error('Please log in to register');
+      toast.error('Please log in to register as a transporter');
       return;
     }
 
-    if (!company.trim() || !contactPerson.trim() || !email.trim() || !phone.trim() || !selectedTruckType) {
+    if (!company.trim() || !contactPerson.trim() || !email.trim() || !phone.trim() || !address.trim() || !selectedTruckType) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (documents.length < REQUIRED_DOCUMENTS.length) {
-      toast.error('Please upload all required documents');
-      return;
-    }
+    const startTimestamp = contractStartDate ? new Date(contractStartDate).getTime() * 1000000 : BigInt(0);
+    const endTimestamp = contractEndDate ? new Date(contractEndDate).getTime() * 1000000 : BigInt(0);
 
     try {
       await registerTransporter.mutateAsync({
@@ -108,280 +90,329 @@ export default function TransporterRegistrationPage() {
         email: email.trim(),
         phone: phone.trim(),
         address: address.trim(),
-        truckType: selectedTruckType as TruckType,
         documents,
-        contract: {
+        contracts: contractDetails.trim() ? [{
           contractText: contractDetails.trim(),
-          startDate: BigInt(0),
-          endDate: BigInt(0),
-        },
-        verificationStatus: TransporterVerificationStatus.pending,
+          startDate: BigInt(startTimestamp),
+          endDate: BigInt(endTimestamp),
+        }] : [],
+        verificationStatus: ClientVerificationStatus.pending,
+        truckType: selectedTruckType as TruckType,
       });
-      toast.success(existingDetails ? 'Profile updated successfully!' : 'Registration submitted! Awaiting admin approval.');
-    } catch (error) {
-      toast.error('Failed to save information. Please try again.');
+      toast.success('Transporter registration submitted successfully! Awaiting admin verification.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to register transporter';
+      toast.error(errorMessage);
       console.error(error);
     }
   };
 
-  const getVerificationStatusBadge = (status: TransporterVerificationStatus) => {
-    switch (status) {
-      case TransporterVerificationStatus.verified:
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Verified
-          </Badge>
-        );
-      case TransporterVerificationStatus.pending:
-        return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending Approval
-          </Badge>
-        );
-      case TransporterVerificationStatus.rejected:
-        return (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-            <XCircle className="h-3 w-3 mr-1" />
-            Rejected
-          </Badge>
-        );
-    }
-  };
-
-  const getVerificationAlert = (status: TransporterVerificationStatus) => {
-    switch (status) {
-      case TransporterVerificationStatus.verified:
-        return (
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-700" />
-            <AlertDescription className="text-green-700">
-              Your transporter profile has been verified. You can now access and bid on loads.
-            </AlertDescription>
-          </Alert>
-        );
-      case TransporterVerificationStatus.pending:
-        return (
-          <Alert className="bg-yellow-50 border-yellow-200">
-            <Clock className="h-4 w-4 text-yellow-700" />
-            <AlertDescription className="text-yellow-700">
-              Your registration is pending admin approval. You will be able to access loads once your profile is verified.
-            </AlertDescription>
-          </Alert>
-        );
-      case TransporterVerificationStatus.rejected:
-        return (
-          <Alert className="bg-red-50 border-red-200">
-            <XCircle className="h-4 w-4 text-red-700" />
-            <AlertDescription className="text-red-700">
-              Your registration has been rejected. Please contact support for more information.
-            </AlertDescription>
-          </Alert>
-        );
-    }
-  };
-
-  if (showProfileSetup) {
-    return <ProfileSetupModal open={showProfileSetup} />;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please log in to register as a transporter.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (loadingDetails) {
-    return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <div className="flex justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
+  // TransporterVerificationStatus has the same enum values as ClientVerificationStatus
+  const isVerified = existingDetails?.verificationStatus === ClientVerificationStatus.verified;
+  const isPending = existingDetails?.verificationStatus === ClientVerificationStatus.pending;
+  const isRejected = existingDetails?.verificationStatus === ClientVerificationStatus.rejected;
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">Transporter Registration</h1>
-          {existingDetails && getVerificationStatusBadge(existingDetails.verificationStatus)}
-        </div>
-        <p className="text-muted-foreground">
-          {existingDetails ? 'Update your transporter profile' : 'Register as a transporter to access loads'}
-        </p>
-      </div>
+    <>
+      <ProfileSetupModal open={showProfileSetup} />
 
-      {existingDetails && getVerificationAlert(existingDetails.verificationStatus)}
+      <div className="container py-10">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-semibold mb-3">Transporter Registration</h1>
+            <p className="text-muted-foreground">Register your transport company to access available loads</p>
+          </div>
 
-      {isAuthenticated && isVerified && (
-        <div className="grid gap-6 mb-6 md:grid-cols-2">
-          <LiveLocationToggleCard />
-          <TransporterStatusCard />
-        </div>
-      )}
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-          <CardDescription>Provide your company details and documentation</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name *</Label>
-                <Input
-                  id="company"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="ABC Transport Ltd"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactPerson">Contact Person *</Label>
-                <Input
-                  id="contactPerson"
-                  value={contactPerson}
-                  onChange={(e) => setContactPerson(e.target.value)}
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contact@abctransport.com"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+27 12 345 6789"
-                  required
-                />
-              </div>
+          {!isAuthenticated ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Please <Link to="/" className="text-primary hover:underline">log in</Link> to register as a transporter.
+              </AlertDescription>
+            </Alert>
+          ) : detailsLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="123 Main Street, Johannesburg, South Africa"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="truckType">Truck Type *</Label>
-              <Select value={selectedTruckType} onValueChange={(value) => setSelectedTruckType(value as TruckType)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select truck type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {truckTypeOptions.map((option) => (
-                    <SelectItem key={option.id.toString()} value={option.truckType}>
-                      {option.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contractDetails">Contract Details</Label>
-              <Textarea
-                id="contractDetails"
-                value={contractDetails}
-                onChange={(e) => setContractDetails(e.target.value)}
-                placeholder="Enter any contract details or special terms..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Required Documents *</Label>
-                <Badge variant="outline">
-                  {documents.length} / {REQUIRED_DOCUMENTS.length} uploaded
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {REQUIRED_DOCUMENTS.map((docName, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={`doc-${index}`} className="text-sm">
-                        {docName}
-                      </Label>
-                      {documents[index] && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          <FileCheck className="h-3 w-3 mr-1" />
-                          Uploaded
-                        </Badge>
-                      )}
+          ) : existingDetails ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle>Registration Status</CardTitle>
+                      <CardDescription>Your transporter registration details</CardDescription>
                     </div>
-                    <Input
-                      id={`doc-${index}`}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(index, file);
-                      }}
-                    />
-                    {uploadProgress[index] !== undefined && uploadProgress[index] < 100 && (
-                      <Progress value={uploadProgress[index]} className="h-1" />
+                    {isVerified && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                    {isPending && (
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                        Pending Verification
+                      </Badge>
+                    )}
+                    {isRejected && (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        Rejected
+                      </Badge>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isVerified && (
+                    <Alert className="bg-green-50 border-green-200">
+                      <CheckCircle className="h-4 w-4 text-green-700" />
+                      <AlertDescription className="text-green-700">
+                        Your transporter account has been verified! You can now browse available loads on the{' '}
+                        <Link to="/load-board" className="underline font-medium">Load Board</Link>.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={registerTransporter.isPending}
-            >
-              {registerTransporter.isPending ? (
+                  {isPending && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Your registration is pending admin verification. You'll be notified once your account is approved.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {isRejected && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Your registration was rejected. Please contact support at{' '}
+                        <a href="mailto:moleleholdings101@gmail.com" className="underline font-medium">
+                          moleleholdings101@gmail.com
+                        </a>{' '}
+                        for more information.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid gap-4 pt-4">
+                    <div>
+                      <Label className="text-muted-foreground">Company</Label>
+                      <p className="font-medium">{existingDetails.company}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Contact Person</Label>
+                      <p className="font-medium">{existingDetails.contactPerson}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Email</Label>
+                      <p className="font-medium">{existingDetails.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Phone</Label>
+                      <p className="font-medium">{existingDetails.phone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Address</Label>
+                      <p className="font-medium">{existingDetails.address}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Truck Type</Label>
+                      <p className="font-medium">
+                        {truckTypeOptions.find(opt => opt.truckType === existingDetails.truckType)?.name || existingDetails.truckType}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Documents Uploaded</Label>
+                      <p className="font-medium">{existingDetails.documents.length} file(s)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {isVerified && (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  <LiveLocationToggleCard />
+                  <TransporterStatusCard />
                 </>
-              ) : existingDetails ? (
-                'Update Profile'
-              ) : (
-                'Submit Registration'
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Register as Transporter</CardTitle>
+                <CardDescription>Fill in your transport company details to get started</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">
+                      <Building2 className="inline h-4 w-4 mr-2" />
+                      Company Name *
+                    </Label>
+                    <Input
+                      id="company"
+                      placeholder="e.g., XYZ Transport Services"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-person">
+                      <User className="inline h-4 w-4 mr-2" />
+                      Contact Person *
+                    </Label>
+                    <Input
+                      id="contact-person"
+                      placeholder="Full name of primary contact"
+                      value={contactPerson}
+                      onChange={(e) => setContactPerson(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">
+                      <Mail className="inline h-4 w-4 mr-2" />
+                      Email Address *
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="contact@transport.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">
+                      <Phone className="inline h-4 w-4 mr-2" />
+                      Phone Number *
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+27 12 345 6789"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">
+                      <MapPin className="inline h-4 w-4 mr-2" />
+                      Business Address *
+                    </Label>
+                    <Textarea
+                      id="address"
+                      placeholder="Full business address including city and country"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="truck-type">
+                      <Truck className="inline h-4 w-4 mr-2" />
+                      Truck Type *
+                    </Label>
+                    <Select value={selectedTruckType} onValueChange={(value) => setSelectedTruckType(value as TruckType)}>
+                      <SelectTrigger id="truck-type">
+                        <SelectValue placeholder="Select your truck type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {truckTypesLoading ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : (
+                          truckTypeOptions.map((option) => (
+                            <SelectItem key={option.id.toString()} value={option.truckType}>
+                              {option.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="documents">
+                      <Upload className="inline h-4 w-4 mr-2" />
+                      Upload Documents (optional)
+                    </Label>
+                    <Input
+                      id="documents"
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                      disabled={isUploading}
+                    />
+                    {documents.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {documents.length} document(s) uploaded
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contract-details">
+                      <FileText className="inline h-4 w-4 mr-2" />
+                      Contract Details (optional)
+                    </Label>
+                    <Textarea
+                      id="contract-details"
+                      placeholder="Any existing contract terms or special requirements"
+                      value={contractDetails}
+                      onChange={(e) => setContractDetails(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+
+                  {contractDetails.trim() && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contract-start">Contract Start Date</Label>
+                        <Input
+                          id="contract-start"
+                          type="date"
+                          value={contractStartDate}
+                          onChange={(e) => setContractStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contract-end">Contract End Date</Label>
+                        <Input
+                          id="contract-end"
+                          type="date"
+                          value={contractEndDate}
+                          onChange={(e) => setContractEndDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={registerTransporter.isPending || isUploading} className="w-full">
+                    {registerTransporter.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting Registration...
+                      </>
+                    ) : (
+                      'Submit Registration'
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    * Required fields. Your registration will be reviewed by an admin before approval.
+                  </p>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

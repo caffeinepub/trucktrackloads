@@ -1,28 +1,18 @@
-import { createRootRoute, createRoute, createRouter, createHashHistory, Outlet } from '@tanstack/react-router';
-import TopNav from './components/layout/TopNav';
-import Footer from './components/layout/Footer';
-import BottomAd from './components/ads/BottomAd';
+import { createRootRoute, createRoute, createHashHistory, createRouter } from '@tanstack/react-router';
+import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
+import ContactPage from './pages/ContactPage';
 import LoadBoardPage from './pages/LoadBoardPage';
+import ContractsPage from './pages/ContractsPage';
 import ClientRegistrationPage from './pages/ClientRegistrationPage';
 import TransporterRegistrationPage from './pages/TransporterRegistrationPage';
-import ContactPage from './pages/ContactPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminPasswordLoginPage from './pages/AdminPasswordLoginPage';
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <div className="flex min-h-screen flex-col bg-background">
-      <TopNav />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <BottomAd />
-      <Footer />
-    </div>
-  ),
+  component: SiteLayout,
 });
 
 const indexRoute = createRoute({
@@ -43,10 +33,22 @@ const servicesRoute = createRoute({
   component: ServicesPage,
 });
 
+const contactRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/contact',
+  component: ContactPage,
+});
+
 const loadBoardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/load-board',
   component: LoadBoardPage,
+});
+
+const contractsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/contracts',
+  component: ContractsPage,
 });
 
 const clientRegistrationRoute = createRoute({
@@ -59,12 +61,6 @@ const transporterRegistrationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/register/transporter',
   component: TransporterRegistrationPage,
-});
-
-const contactRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/contact',
-  component: ContactPage,
 });
 
 const adminRoute = createRoute({
@@ -83,19 +79,21 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   aboutRoute,
   servicesRoute,
+  contactRoute,
   loadBoardRoute,
+  contractsRoute,
   clientRegistrationRoute,
   transporterRegistrationRoute,
-  contactRoute,
   adminRoute,
   adminLoginRoute,
 ]);
 
 const hashHistory = createHashHistory();
 
-export const router = createRouter({ 
-  routeTree, 
+export const router = createRouter({
+  routeTree,
   history: hashHistory,
+  defaultPreload: 'intent',
 });
 
 declare module '@tanstack/react-router' {

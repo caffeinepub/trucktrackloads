@@ -14,10 +14,10 @@ export type ApprovalStatus = { 'pending' : null } |
   { 'approved' : null } |
   { 'rejected' : null };
 export interface ClientInfo {
-  'contract' : ContractDetails,
   'contactPerson' : string,
   'email' : string,
   'company' : string,
+  'contracts' : Array<Contract>,
   'address' : string,
   'phone' : string,
   'verificationStatus' : ClientVerificationStatus,
@@ -30,7 +30,7 @@ export interface ContactInfo {
   'email' : string,
   'message' : string,
 }
-export interface ContractDetails {
+export interface Contract {
   'endDate' : bigint,
   'contractText' : string,
   'startDate' : bigint,
@@ -71,11 +71,11 @@ export interface TrackingUpdate {
 }
 export interface TransporterDetails {
   'documents' : Array<ExternalBlob>,
-  'contract' : ContractDetails,
   'contactPerson' : string,
   'email' : string,
   'truckType' : TruckType,
   'company' : string,
+  'contracts' : Array<Contract>,
   'address' : string,
   'phone' : string,
   'verificationStatus' : TransporterVerificationStatus,
@@ -160,11 +160,14 @@ export interface _SERVICE {
   'getCallerTransporterDetails' : ActorMethod<[], [] | [TransporterDetails]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getClientContracts' : ActorMethod<[Principal], Array<Contract>>,
   'getClientInfo' : ActorMethod<[Principal], [] | [ClientInfo]>,
   'getClientLoads' : ActorMethod<[Principal], Array<Load>>,
+  'getContracts' : ActorMethod<[], Array<Contract>>,
   'getLoadTracking' : ActorMethod<[string], [] | [TrackingUpdate]>,
   'getLocationEvidence' : ActorMethod<[Principal], Array<LocationEvidence>>,
   'getTransporter' : ActorMethod<[Principal], [] | [TransporterDetails]>,
+  'getTransporterLoadBoard' : ActorMethod<[], Array<Load>>,
   'getTransporterLoads' : ActorMethod<[Principal], Array<Load>>,
   'getTransporterStatus' : ActorMethod<[Principal], [] | [TransporterStatus]>,
   'getTruckTypeOptions' : ActorMethod<[], Array<TruckTypeOption>>,
@@ -172,6 +175,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
+  'postContract' : ActorMethod<[Contract], undefined>,
   'registerClient' : ActorMethod<[ClientInfo], undefined>,
   'registerTransporter' : ActorMethod<[TransporterDetails], undefined>,
   'requestApproval' : ActorMethod<[], undefined>,
