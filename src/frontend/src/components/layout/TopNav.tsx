@@ -43,6 +43,9 @@ export default function TopNav() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/contact">Contact</Link>
             </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/admin/login">Admin</Link>
+            </Button>
           </nav>
         </div>
 
@@ -89,6 +92,9 @@ export default function TopNav() {
             </Button>
             <Button variant="ghost" size="sm" asChild className="justify-start">
               <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start">
+              <Link to="/admin/login" onClick={() => setMobileMenuOpen(false)}>Admin</Link>
             </Button>
             <div className="pt-2 border-t mt-2">
               <LoginButton onLoginSuccess={handleLoginSuccess} />

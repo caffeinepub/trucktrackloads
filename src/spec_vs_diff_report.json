@@ -1,50 +1,54 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T15:02:33.639Z",
-  "summary": "Core admin-flow changes were implemented (admin verification query initializes access control with the stored token; new admin error/retry UI; updated admin route guard). However, the admin login handler still uses a fixed setTimeout delay, which conflicts with the requirement to remove timing/race dependencies. The diff also contains multiple unrelated frontend changes (contracts route/nav, copy updates, load board restrictions, etc.) not requested by the BuildRequest.",
+  "generatedAt": "2026-02-16T17:58:23.465Z",
+  "summary": "REQ-1 appears implemented via an Admin link added to TopNav for both desktop and mobile. Backend adminLogin was added with the specified credentials, and the admin dashboard was updated to consume identifier-inclusive query hooks for pending loads/clients/transporters. However, the diff evidence does not show the admin login page changes required to call adminLogin, store the token in session storage, and navigate to /admin; backend identifier-inclusive query methods (and approved-loads-with-IDs) are also not evidenced in the provided backend diff truncation. Some extra backend/admin functionality and a migration file were added without clear requirement support.",
   "missing_requirements": [
     {
-      "id": "REQ-3",
-      "requirement": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed setTimeout delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation).",
-      "reason": "Admin password login still contains an explicit delay (setTimeout) after storing the token, indicating continued reliance on arbitrary timing rather than only explicit state transitions/refetch completion.",
+      "id": "REQ-2",
+      "requirement": "Ensure the admin login form at \"/admin/login\" authenticates via backend admin login flow, stores returned token in session storage using existing admin-token mechanism, and navigates to \"/admin\" on successful verification; invalid credentials show an error and do not navigate.",
+      "reason": "The diff shows backend adminLogin implementation, but does not show any changes to an \"/admin/login\" page/component to submit credentials, store the token in sessionStorage, trigger verification, and navigate to /admin. No login-form error handling is evidenced either.",
       "evidence": [
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+        "backend/main.mo",
+        "frontend-file-summaries.txt (no /admin/login page mentioned/changed in summary)",
+        "frontend/src/hooks/useQueries.ts (shows verification hook, but not the login form submission flow)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Extend backend admin-facing query API to return identifiers required for correct admin actions (load IDs for pending+approved loads; Principal IDs for clients+transporters) and update frontend hooks/UI to consume them; refetch after mutations.",
+      "reason": "Frontend adds/uses identifier-inclusive hooks for pending loads/clients/transporters, but backend changes that actually add these identifier-inclusive admin query methods are not shown in the truncated backend diff. Additionally, the dashboard still uses useGetAllApprovedLoads (not an identifier-inclusive approved-loads-with-IDs query), so the AC for approved loads including loadId is not evidenced.",
+      "evidence": [
+        "backend/main.mo (truncated; no shown functions for identifier-inclusive queries)",
+        "frontend/src/hooks/useQueries.ts (mentions new hooks like useGetAllPendingLoadsWithIds / useGetAllClientsWithIds / useGetAllTransportersWithIds; approved loads hook shown as useGetAllApprovedLoads)",
+        "frontend/src/pages/AdminDashboardPage.tsx (imports useGetAllApprovedLoads, not an approved-loads-with-IDs hook)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added/updated general site features and content unrelated to admin login (e.g., new /contracts route and navigation links, coverage-area text updates, contact details updates).",
-      "reason": "BuildRequest is narrowly scoped to fixing password-admin login/session/authorization; these changes are not requested requirements or acceptance criteria.",
+      "description": "Added backend credential update endpoint (updateCredentials) allowing admins to change the username/password.",
+      "reason": "The BuildRequest only asked for login using the existing password-admin token mechanism and specific credentials; it did not request adding a credential-management feature.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "backend/main.mo (public shared func updateCredentials)"
       ]
     },
     {
-      "description": "Modified load board behavior to restrict Browse Loads to verified transporters and added related UI indicators.",
-      "reason": "Not part of the admin login/session fix scope or any listed requirements.",
+      "description": "Added backend/migration.mo as a pass-through migration module despite no evidenced stable schema change.",
+      "reason": "The BuildRequest constraint allows migration changes only if stable state schema changes require it; the added file indicates no data changes are needed, and the diff does not evidence a required schema migration.",
       "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Backend method updateCredentials added/modified for changing admin credentials.",
-      "reason": "The BuildRequest explicitly lists changing admin credentials / adding rotation UI as non-goals; adding credential-update capability is outside the requested scope.",
-      "evidence": [
-        "backend/main.mo"
+        "backend/migration.mo"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.6,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-    "frontend/src/components/auth/AdminRouteErrorState.tsx",
-    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/components/layout/TopNav.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/pages/AdminDashboardPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

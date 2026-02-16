@@ -1,90 +1,113 @@
 {
   "kind": "build_request",
-  "title": "Fix password-admin login so users can access /admin dashboard after logging in",
-  "priority": "high",
+  "title": "Add Admin menu login and fix admin dashboard actions",
+  "projectName": "TruckTrack Admin",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
+      "text": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-user-1"
         ],
         "quotes": [
-          "I cannot access my admin after logging in"
+          "Add an Admin button in the menu. When I click it, show a login form."
         ]
       },
       "acceptanceCriteria": [
-        "From a fresh session (no Internet Identity login), entering correct admin credentials on `/admin/login` redirects to `/admin` and the dashboard renders.",
-        "After refreshing the page while on `/admin`, the user remains authorized for the duration of the browser session (until sessionStorage is cleared) and the dashboard still renders.",
-        "If the admin token is cleared (logout/sign-out flow), attempting to access `/admin` redirects to `/admin/login`."
+        "Top navigation shows an \"Admin\" entry on desktop navigation.",
+        "Mobile menu shows an \"Admin\" entry when expanded.",
+        "Clicking \"Admin\" navigates to \"/admin/login\"."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
-      "target": "frontend",
+      "text": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-user-1"
         ],
         "quotes": [
-          "I cannot access my admin after logging in"
+          "The login should accept username Gushna and password Gushgesh#9. After login, show the admin dashboard that is functioning"
         ]
       },
       "acceptanceCriteria": [
-        "When `sessionStorage.caffeineAdminToken` is present, admin verification uses an actor instance that has had `_initializeAccessControlWithSecret(caffeineAdminToken)` invoked, regardless of whether Internet Identity is logged in.",
-        "Immediately after successful admin password login, the admin verification query refetches and resolves to authorized without requiring manual refresh.",
-        "No changes are made to any frontend immutable paths listed in SYSTEM_CONTEXT (in particular, do not edit `frontend/src/hooks/useActor.ts`)."
+        "Submitting username \"Gushna\" and password \"Gushgesh#9\" results in a successful login token being stored in session storage (using the app's existing admin-token mechanism).",
+        "After login, admin verification succeeds and the user is navigated to \"/admin\".",
+        "Submitting invalid credentials shows an error message and does not navigate to \"/admin\"."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
-      "target": "frontend",
+      "text": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-user-1"
         ],
         "quotes": [
-          "I cannot access my admin after logging in"
+          "After login, show the admin dashboard that is functioning"
         ]
       },
       "acceptanceCriteria": [
-        "Admin login does not rely on arbitrary delays to succeed; it waits on concrete verification/refetch completion before considering the session valid.",
-        "If admin verification fails after login, the UI shows a clear error state (in English) with a working Retry action that re-attempts verification.",
-        "The `/admin` route never gets stuck in an infinite redirect loop between `/admin` and `/admin/login`."
+        "Approving/rejecting a specific pending load updates that specific load in the backend and the UI refreshes to reflect the change.",
+        "Verifying/rejecting a specific client updates that specific client's verification status in the backend and the UI refreshes to reflect the change.",
+        "Verifying/rejecting a specific transporter updates that specific transporter's verification status in the backend and the UI refreshes to reflect the change.",
+        "No admin dashboard action uses an index-derived ID (e.g., \"L1\", \"L2\") or a non-principal identifier (e.g., email) when calling backend admin mutation methods that require true IDs/principals."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Verify and, if needed, fix backend admin verification so that the token returned by `adminLogin(username, password)` results in `isCallerAdmin()` returning `true` for the session after the frontend has initialized access control with `_initializeAccessControlWithSecret(token)`.",
-      "target": "backend",
+      "text": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-user-1"
         ],
         "quotes": [
-          "I cannot access my admin after logging in"
+          "admin dashboard that is functioning"
         ]
       },
       "acceptanceCriteria": [
-        "With correct credentials, `adminLogin` returns a token and subsequent calls in the same session (after `_initializeAccessControlWithSecret(token)`) cause `isCallerAdmin()` to return `true` for that caller.",
-        "With an invalid/empty token, `isCallerAdmin()` returns `false` (or traps with a clear unauthorized error), and admin-only methods remain protected.",
-        "Admin-only backend methods (e.g., approving loads, verifying users, viewing contact messages) remain inaccessible without valid admin verification."
+        "Backend provides a query for pending loads that includes each load's loadId alongside the Load data.",
+        "Backend provides a query for approved loads that includes each load's loadId alongside the Load data.",
+        "Backend provides an admin query for clients that includes each client's Principal alongside the ClientInfo data (so the frontend can call verifyClient with a real Principal).",
+        "Backend provides an admin query for transporters that includes each transporter's Principal alongside the TransporterDetails data (so the frontend can call verifyTransporter with a real Principal).",
+        "Frontend admin dashboard uses these identifier-inclusive query results to drive button click handlers (approve/reject/verify) with correct arguments.",
+        "All impacted queries are invalidated/refetched after mutations so the dashboard reflects changes without requiring a full page refresh."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "After login, show the admin dashboard that is functioning"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Navigating directly to \"/admin\" without a valid admin session redirects to \"/admin/login\" (or otherwise prevents dashboard content from rendering).",
+        "After successful admin login and verification, navigating to \"/admin\" renders the dashboard content without access errors.",
+        "Signing out from the dashboard clears the admin session and returns the user to \"/admin/login\"."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not edit any frontend files under `frontend/src/hooks/useInternetIdentity.ts` / `.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or anything in `frontend/src/components/ui` (compose instead).",
-    "Use English for all user-facing text."
+    "Do not edit files under frontend/src/components/ui (Shadcn UI components); compose them instead.",
+    "Do not modify frontend immutable paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts[x], frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
+    "Keep all backend logic in the single Motoko actor in backend/main.mo; only add backend/migration.mo changes if stable state schema changes require it."
   ],
   "nonGoals": [
-    "Adding new authentication providers (only existing Internet Identity + password-admin token flow).",
-    "Implementing real-time features (WebSockets/push notifications).",
-    "Changing admin credentials or adding a UI for rotating the hidden token beyond what already exists."
+    "Do not add third-party authentication providers (only existing Internet Identity + the existing password-admin token mechanism).",
+    "Do not add new admin features beyond making the existing admin dashboard sections and clicks function correctly.",
+    "Do not introduce external databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],

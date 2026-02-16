@@ -1,49 +1,75 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project experiencing an issue where admin users cannot access the admin/dashboard after logging in.",
+  "summary": "App needs an Admin menu entry with credential-based login and a functioning admin dashboard; also address unresponsive click interactions.",
   "architectural_notes": [],
   "known_issues": [
-    "Admin users cannot access the admin/dashboard after logging in."
+    "Some clicks/interactions are not responding or not showing what is being clicked."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-password-based-admin-session-flow-so-that-after-a-successful-admin-login-navigating-to-admin-reliably-renders-the-admin-dashboard-instead-of-redirecting-back-to-admin-login-or-showing-an-access-denied-state",
-      "title": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
+      "id": "feature-add-an-admin-button-link-to-the-main-navigation-menu-desktop-and-mobile-that-routes-to-the-admin-login-page-at-admin-login",
+      "title": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-that-a-password-admin-session-initializes-backend-authorization-with-the-admin-token-even-when-the-user-is-not-authenticated-via-internet-identity-i-e-when-the-app-is-using-an-anonymous-identity-so-that-admin-verification-queries-e-g-iscalleradmin-succeed-immediately-after-login",
-      "title": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
+      "id": "feature-ensure-the-admin-login-form-at-admin-login-successfully-authenticates-using-username-gushna-and-password-gushgesh-9-by-calling-the-backend-admin-login-flow-storing-the-returned-token-and-then-navigating-to-admin-on-successful-admin-verification",
+      "title": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-admin-route-guarding-and-admin-login-handling-to-remove-timing-race-dependencies-e-g-fixed-settimeout-delays-and-instead-rely-on-explicit-state-transitions-token-stored-admin-verification-refetched-navigation-so-the-experience-is-consistent-across-devices-and-network-speeds",
-      "title": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
+      "id": "feature-fix-the-admin-dashboard-so-that-all-click-actions-in-each-dashboard-section-operate-on-the-correct-underlying-records-no-placeholder-ids-or-incorrect-identifiers-including-approving-rejecting-loads-verifying-clients-and-verifying-transporters",
+      "title": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-backend-admin-facing-query-api-to-return-the-identifiers-required-for-correct-admin-actions-load-ids-and-user-principals-and-update-the-frontend-react-query-hooks-and-admin-dashboard-ui-to-consume-these-identifier-inclusive-results",
+      "title": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-admin-dashboard-route-admin-remains-access-controlled-unauthenticated-users-no-valid-admin-token-failed-verification-must-be-redirected-to-admin-login-while-verified-admins-can-view-and-use-the-dashboard-tabs",
+      "title": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-4",
-      "summary": "Verify and, if needed, fix backend admin verification so that the token returned by `adminLogin(username, password)` results in `isCallerAdmin()` returning `true` for the session after the frontend has initialized access control with `_initializeAccessControlWithSecret(token)`.",
-      "reqIds": [
-        "REQ-4"
-      ],
+      "id": "AR-1",
+      "summary": "Add an Admin button to the main menu that opens an admin login form.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement admin login flow that accepts username 'Gushna' and password 'Gushgesh#9' and, on success, routes to a functioning admin dashboard for managing the app.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Fix UI click interactions so clicks respond and display/open the correct item/section being clicked (especially in admin dashboard).",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix password-admin login so users can access /admin dashboard after logging in",
+  "projectName": "TruckTrack Admin",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

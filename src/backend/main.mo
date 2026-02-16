@@ -10,8 +10,9 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import Time "mo:core/Time";
+import Migration "migration";
 
-// Apply migration on upgrade
+(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -336,6 +337,16 @@ actor {
     iter.toArray();
   };
 
+  // NEW: AdminView tuple type for all clients
+
+  public query ({ caller }) func getAllClientsWithIds() : async [(Principal, ClientInfo)] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view all clients");
+    };
+    let iter = clients.entries();
+    iter.toArray();
+  };
+
   // Transporter loadboard
   public query ({ caller }) func getTransporterLoadBoard() : async [Load] {
     if (not isVerifiedTransporter(caller)) {
@@ -345,7 +356,6 @@ actor {
     allLoads.filter(func(l) { l.isApproved });
   };
 
-  // Helper function to check if caller is verified transporter
   func isVerifiedTransporter(caller : Principal) : Bool {
     switch (transporters.get(caller)) {
       case (null) {
@@ -376,6 +386,16 @@ actor {
       Runtime.trap("Unauthorized: Only admins can view all transporters");
     };
     let iter = transporters.values();
+    iter.toArray();
+  };
+
+  // NEW: AdminView tuple type for all transporters
+
+  public query ({ caller }) func getAllTransportersWithIds() : async [(Principal, TransporterDetails)] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all transporters");
+    };
+    let iter = transporters.entries();
     iter.toArray();
   };
 
@@ -432,6 +452,21 @@ actor {
     } else {
       loads.remove(loadId);
     };
+  };
+
+  // NEW: tuple type for admin query of pending loads
+  public query ({ caller }) func getAllPendingLoadsWithIds() : async [(Text, Load)] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view pending loads");
+    };
+
+    let entries = loads.entries().toArray();
+    let pendingEntries = entries.filter(
+      func((_, load)) {
+        not load.isApproved;
+      }
+    );
+    pendingEntries;
   };
 
   // Contracts
@@ -508,7 +543,6 @@ actor {
       Runtime.trap("Unauthorized: Only admins or the load owner can update a load");
     };
 
-    // Non-admin owners can only update certain fields
     if (not isAdmin and isOwner) {
       if (load.client != existing.client) {
         Runtime.trap("Unauthorized: Cannot change load owner");
@@ -567,15 +601,9 @@ actor {
   };
 
   public query ({ caller }) func getAllPendingLoads() : async [Load] {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can view pending loads");
-    };
-    let iter = loads.values();
-    let allLoads = iter.toArray();
-    allLoads.filter(func(l) { not l.isApproved });
+    Runtime.trap("getAllPendingLoads is deprecated; use `getAllPendingLoadsWithIds` instead");
   };
 
-  // Tracking
   public query ({ caller }) func getLoadTracking(loadId : Text) : async ?TrackingUpdate {
     let load = switch (loads.get(loadId)) {
       case (null) {
@@ -610,7 +638,6 @@ actor {
     loads.add(loadId, updated);
   };
 
-  // Truck Type Options
   public query ({ caller }) func getTruckTypeOptions() : async [TruckTypeOption] {
     Array.tabulate<TruckTypeOption>(
       3,

@@ -144,13 +144,19 @@ export interface _SERVICE {
   'deleteLoad' : ActorMethod<[string], undefined>,
   'getAllApprovedLoads' : ActorMethod<[], Array<Load>>,
   'getAllClients' : ActorMethod<[], Array<ClientInfo>>,
+  'getAllClientsWithIds' : ActorMethod<[], Array<[Principal, ClientInfo]>>,
   'getAllContactMessages' : ActorMethod<[], Array<[Principal, ContactInfo]>>,
   'getAllPendingLoads' : ActorMethod<[], Array<Load>>,
+  'getAllPendingLoadsWithIds' : ActorMethod<[], Array<[string, Load]>>,
   'getAllTransporterStatuses' : ActorMethod<
     [],
     Array<[Principal, TransporterStatus]>
   >,
   'getAllTransporters' : ActorMethod<[], Array<TransporterDetails>>,
+  'getAllTransportersWithIds' : ActorMethod<
+    [],
+    Array<[Principal, TransporterDetails]>
+  >,
   'getAllTransportersWithLocations' : ActorMethod<
     [],
     Array<[Principal, TransporterDetails, [] | [LiveLocation]]>

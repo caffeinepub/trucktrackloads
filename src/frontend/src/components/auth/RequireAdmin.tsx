@@ -21,61 +21,40 @@ export default function RequireAdmin({ children }: RequireAdminProps) {
 
   // Use effect for navigation to avoid render-time navigation
   useEffect(() => {
-    // Only redirect after loading is complete and we know the user is not authorized
-    if (!isLoading && !hasPasswordAdmin) {
+    // Only redirect after verification has completed (not loading)
+    // and we have a definitive result (not admin)
+    if (!isLoading && !isAdmin && hasPasswordAdmin) {
+      // User has password admin session but verification failed/returned false
+      // Redirect to login page
       navigate({ to: '/admin/login', replace: true });
     }
-  }, [isLoading, hasPasswordAdmin, navigate]);
+  }, [isLoading, isAdmin, hasPasswordAdmin, navigate]);
 
-  useEffect(() => {
-    // Redirect non-admin users after verification completes
-    // Only redirect if we have a definitive unauthorized state (not loading, not error)
-    if (!isLoading && hasPasswordAdmin && isAdmin === false && !error) {
-      navigate({ to: '/admin/login', replace: true });
-    }
-  }, [isLoading, hasPasswordAdmin, isAdmin, error, navigate]);
-
-  // No password admin session - show loading while redirect happens
-  if (!hasPasswordAdmin) {
+  // Show loading state while checking authorization
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="text-muted-foreground">Checking authorization...</p>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">
+            {hasPasswordAdmin ? 'Verifying admin access...' : 'Checking authorization...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Show error state if verification failed
+  // Show error state if there was an error during verification
   if (error) {
     return <AdminRouteErrorState onRetry={handleRetry} />;
   }
 
-  // Show loading while verification is in progress
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="text-muted-foreground">Verifying admin access...</p>
-        </div>
-      </div>
-    );
+  // If not admin and not loading, don't render anything
+  // (navigation will happen via useEffect)
+  if (!isAdmin) {
+    return null;
   }
 
-  // Only render children if admin verification passed
-  if (isAdmin) {
-    return <>{children}</>;
-  }
-
-  // Fallback: show loading while redirect is processing
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-        <p className="text-muted-foreground">Redirecting...</p>
-      </div>
-    </div>
-  );
+  // User is admin, render children
+  return <>{children}</>;
 }

@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-password-based-admin-session-flow-so-that-after-a-successful-admin-login-navigating-to-admin-reliably-renders-the-admin-dashboard-instead-of-redirecting-back-to-admin-login-or-showing-an-access-denied-state",
-      "featureTitle": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
+      "featureId": "feature-add-an-admin-button-link-to-the-main-navigation-menu-desktop-and-mobile-that-routes-to-the-admin-login-page-at-admin-login",
+      "featureTitle": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
       "files": [
-        "frontend/src/components/auth/RequireAdmin.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+        "frontend/src/components/layout/TopNav.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -25,11 +23,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-that-a-password-admin-session-initializes-backend-authorization-with-the-admin-token-even-when-the-user-is-not-authenticated-via-internet-identity-i-e-when-the-app-is-using-an-anonymous-identity-so-that-admin-verification-queries-e-g-iscalleradmin-succeed-immediately-after-login",
-      "featureTitle": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
+      "featureId": "feature-ensure-the-admin-login-form-at-admin-login-successfully-authenticates-using-username-gushna-and-password-gushgesh-9-by-calling-the-backend-admin-login-flow-storing-the-returned-token-and-then-navigating-to-admin-on-successful-admin-verification",
+      "featureTitle": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -47,12 +44,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-admin-route-guarding-and-admin-login-handling-to-remove-timing-race-dependencies-e-g-fixed-settimeout-delays-and-instead-rely-on-explicit-state-transitions-token-stored-admin-verification-refetched-navigation-so-the-experience-is-consistent-across-devices-and-network-speeds",
-      "featureTitle": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
+      "featureId": "feature-fix-the-admin-dashboard-so-that-all-click-actions-in-each-dashboard-section-operate-on-the-correct-underlying-records-no-placeholder-ids-or-incorrect-identifiers-including-approving-rejecting-loads-verifying-clients-and-verifying-transporters",
+      "featureTitle": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
       "files": [
-        "frontend/src/components/auth/AdminRouteErrorState.tsx",
-        "frontend/src/components/auth/RequireAdmin.tsx",
-        "frontend/src/pages/AdminPasswordLoginPage.tsx"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -66,6 +62,49 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-the-backend-admin-facing-query-api-to-return-the-identifiers-required-for-correct-admin-actions-load-ids-and-user-principals-and-update-the-frontend-react-query-hooks-and-admin-dashboard-ui-to-consume-these-identifier-inclusive-results",
+      "featureTitle": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-the-admin-dashboard-route-admin-remains-access-controlled-unauthenticated-users-no-valid-admin-token-failed-verification-must-be-redirected-to-admin-login-while-verified-admins-can-view-and-use-the-dashboard-tabs",
+      "featureTitle": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
+      "files": [
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

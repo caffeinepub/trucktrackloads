@@ -1,78 +1,92 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T15:02:33.642Z",
+  "generatedAt": "2026-02-16T17:58:23.468Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the password-based admin session flow so that after a successful `/admin/login`, navigating to `/admin` reliably renders the admin dashboard instead of redirecting back to `/admin/login` or showing an access-denied state.",
+        "summary": "Add an \"Admin\" button/link to the main navigation menu (desktop and mobile) that routes to the admin login page at \"/admin/login\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/auth/RequireAdmin.tsx",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/components/layout/TopNav.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/auth/RequireAdmin.tsx",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/components/layout/TopNav.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure that a password-admin session initializes backend authorization with the admin token even when the user is not authenticated via Internet Identity (i.e., when the app is using an anonymous identity), so that admin verification queries (e.g., `isCallerAdmin`) succeed immediately after login.",
+        "summary": "Ensure the admin login form at \"/admin/login\" successfully authenticates using username \"Gushna\" and password \"Gushgesh#9\" by calling the backend admin login flow, storing the returned token, and then navigating to \"/admin\" on successful admin verification.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/pages/AdminPasswordLoginPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminPasswordLoginPage.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Update admin route guarding and admin login handling to remove timing/race dependencies (e.g., fixed `setTimeout` delays) and instead rely on explicit state transitions (token stored → admin verification refetched → navigation) so the experience is consistent across devices and network speeds.",
+        "summary": "Fix the admin dashboard so that all click actions in each dashboard section operate on the correct underlying records (no placeholder IDs or incorrect identifiers), including: approving/rejecting loads, verifying clients, and verifying transporters.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx",
-          "frontend/src/components/auth/RequireAdmin.tsx",
-          "frontend/src/components/auth/AdminRouteErrorState.tsx"
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AdminPasswordLoginPage.tsx",
-          "frontend/src/components/auth/RequireAdmin.tsx",
-          "frontend/src/components/auth/AdminRouteErrorState.tsx"
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Verify and, if needed, fix backend admin verification so that the token returned by `adminLogin(username, password)` results in `isCallerAdmin()` returning `true` for the session after the frontend has initialized access control with `_initializeAccessControlWithSecret(token)`.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Extend the backend admin-facing query API to return the identifiers required for correct admin actions (load IDs and user principals), and update the frontend React Query hooks and admin dashboard UI to consume these identifier-inclusive results.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Ensure the admin dashboard route (\"/admin\") remains access-controlled: unauthenticated users (no valid admin token / failed verification) must be redirected to \"/admin/login\", while verified admins can view and use the dashboard tabs.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/RequireAdmin.tsx",
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/AdminDashboardPage.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/auth/AdminRouteErrorBoundary.tsx",
-    "frontend/src/components/auth/AdminRouteErrorState.tsx",
-    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/layout/TopNav.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/pages/AdminDashboardPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

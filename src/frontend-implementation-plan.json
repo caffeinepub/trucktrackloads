@@ -1,78 +1,109 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Stabilize password-admin login/session so /admin reliably renders after login and refresh",
+  "title": "TruckTrack Admin: Admin nav link, password admin login flow, and correct dashboard record actions",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix password-admin session persistence and routing so /admin renders dashboard after login and remains authorized across refresh until sessionStorage is cleared.",
+      "summary": "Add an Admin entry to desktop and mobile navigation that routes to /admin/login.",
       "acceptanceCriteria": [
-        "From a fresh session (no Internet Identity login), entering correct admin credentials on `/admin/login` redirects to `/admin` and the dashboard renders.",
-        "After refreshing the page while on `/admin`, the user remains authorized for the duration of the browser session (until sessionStorage is cleared) and the dashboard still renders.",
-        "If the admin token is cleared (logout/sign-out flow), attempting to access `/admin` redirects to `/admin/login`."
+        "Top navigation shows an \"Admin\" entry on desktop navigation.",
+        "Mobile menu shows an \"Admin\" entry when expanded.",
+        "Clicking \"Admin\" navigates to \"/admin/login\"."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/layout/TopNav.tsx",
           "operation": "modify",
-          "description": "Update the admin verification hook (useIsCallerAdmin) so that when sessionStorage.caffeineAdminToken is present, the current actor is explicitly initialized with the token before running admin verification; this ensures correct authorization after refresh even with an anonymous identity. (Uses the existing authorization/access-control initialization behavior; verify the component's usage instructions before implementing.)"
-        },
-        {
-          "path": "frontend/src/components/auth/RequireAdmin.tsx",
-          "operation": "modify",
-          "description": "Adjust admin route guarding so it only redirects to /admin/login after a definitive verification outcome (authorized vs unauthorized) and does not prematurely redirect while verification is still pending, preventing access-denied/redirect flicker and improving post-refresh stability."
-        },
-        {
-          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
-          "operation": "modify",
-          "description": "After successful adminLogin, store the token and then drive navigation to /admin only after the admin verification has been refetched and confirmed authorized (no arbitrary delays), ensuring the dashboard renders immediately after login."
+          "description": "Add an \"Admin\" navigation item to both the desktop nav and the mobile expanded menu, routing to \"/admin/login\". Ensure mobile click also closes the mobile menu."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Ensure password-admin sessions initialize backend access control with the admin token even when using an anonymous identity, so admin verification succeeds immediately after login.",
+      "summary": "Ensure /admin/login performs backend admin login, stores token in sessionStorage via existing mechanism, verifies admin, and navigates to /admin; show errors on invalid credentials.",
       "acceptanceCriteria": [
-        "When `sessionStorage.caffeineAdminToken` is present, admin verification uses an actor instance that has had `_initializeAccessControlWithSecret(caffeineAdminToken)` invoked, regardless of whether Internet Identity is logged in.",
-        "Immediately after successful admin password login, the admin verification query refetches and resolves to authorized without requiring manual refresh.",
-        "No changes are made to any frontend immutable paths listed in SYSTEM_CONTEXT (in particular, do not edit `frontend/src/hooks/useActor.ts`)."
+        "Submitting username \"Gushna\" and password \"Gushgesh#9\" results in a successful login token being stored in session storage (using the app's existing admin-token mechanism).",
+        "After login, admin verification succeeds and the user is navigated to \"/admin\".",
+        "Submitting invalid credentials shows an error message and does not navigate to \"/admin\"."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Implement token-based access-control initialization inside the admin verification flow: when adminToken exists, call actor._initializeAccessControlWithSecret(adminToken) as part of the verification query path so isCallerAdmin() reflects the password-admin session even for anonymous identity. (Leverages the selected authorization component’s access-control initialization; verify the component's usage instructions before implementing.)"
-        },
-        {
           "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
           "operation": "modify",
-          "description": "On successful password login, trigger a deterministic admin verification refetch using React Query (await refetch completion) and proceed based on the verified result; ensure this works even when the actor was created as anonymous."
+          "description": "Align the login submit flow with the app's existing password-admin token mechanism: call backend admin login, store the returned token in sessionStorage using the existing helper, then trigger admin verification and navigate to \"/admin\" on success; ensure invalid credentials reliably surface an error and do not navigate."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Ensure admin verification query behavior remains consistent with the selected \"authorization\" component's frontend guidance (e.g., handle authorization failures gracefully and keep verification dependent on the stored admin token). Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Remove timing/race dependencies in admin login and admin route guarding by using explicit state transitions and a retryable error state.",
+      "summary": "Fix admin dashboard actions so approve/reject and verify/reject operate on the correct underlying load IDs and user principals, and refresh UI after mutations.",
       "acceptanceCriteria": [
-        "Admin login does not rely on arbitrary delays to succeed; it waits on concrete verification/refetch completion before considering the session valid.",
-        "If admin verification fails after login, the UI shows a clear error state (in English) with a working Retry action that re-attempts verification.",
-        "The `/admin` route never gets stuck in an infinite redirect loop between `/admin` and `/admin/login`."
+        "Approving/rejecting a specific pending load updates that specific load in the backend and the UI refreshes to reflect the change.",
+        "Verifying/rejecting a specific client updates that specific client's verification status in the backend and the UI refreshes to reflect the change.",
+        "Verifying/rejecting a specific transporter updates that specific transporter's verification status in the backend and the UI refreshes to reflect the change.",
+        "No admin dashboard action uses an index-derived ID (e.g., \"L1\", \"L2\") or a non-principal identifier (e.g., email) when calling backend admin mutation methods that require true IDs/principals."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminPasswordLoginPage.tsx",
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Remove setTimeout-based waiting and replace with explicit flow: token stored → verification refetch awaited → navigate to /admin if authorized; if verification fails, show an English error message with a Retry action that re-attempts verification refetch."
+          "description": "Update dashboard section list rendering and button click handlers to use true identifiers from identifier-inclusive query results (loadId for loads; Principal for clients/transporters) rather than placeholder/index-derived IDs or emails. Ensure list keys and action arguments are driven by the true IDs/principals and that post-mutation UI refresh occurs via existing React Query invalidations."
         },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust/extend admin dashboard query hooks to return identifier-inclusive data used by action handlers, and ensure relevant queries are invalidated/refetched after approve/verify mutations so the dashboard updates without a full refresh."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Consume identifier-inclusive admin query results in React Query hooks and dashboard UI to support correct admin actions and refetch after mutations.",
+      "acceptanceCriteria": [
+        "Backend provides a query for pending loads that includes each load's loadId alongside the Load data.",
+        "Backend provides a query for approved loads that includes each load's loadId alongside the Load data.",
+        "Backend provides an admin query for clients that includes each client's Principal alongside the ClientInfo data (so the frontend can call verifyClient with a real Principal).",
+        "Backend provides an admin query for transporters that includes each transporter's Principal alongside the TransporterDetails data (so the frontend can call verifyTransporter with a real Principal).",
+        "Frontend admin dashboard uses these identifier-inclusive query results to drive button click handlers (approve/reject/verify) with correct arguments.",
+        "All impacted queries are invalidated/refetched after mutations so the dashboard reflects changes without requiring a full page refresh."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add/adjust React Query hooks for admin-only lists to consume identifier-inclusive backend capabilities (e.g., pending loads with loadId, clients with Principal, transporters with Principal, and approved loads with loadId when available). Where the type surface is not yet present, use a safe runtime access pattern that avoids TypeScript breakage while still enabling the dashboard to migrate to the new identifier-inclusive results."
+        },
+        {
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Switch admin dashboard tabs/sections to use the new identifier-inclusive hooks and wire their results into approve/reject/verify handlers. Ensure all impacted queries are invalidated/refetched after mutations so state updates are reflected immediately."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Keep /admin access-controlled: redirect unauthenticated users to /admin/login; allow verified admins; support sign-out clearing admin session.",
+      "acceptanceCriteria": [
+        "Navigating directly to \"/admin\" without a valid admin session redirects to \"/admin/login\" (or otherwise prevents dashboard content from rendering).",
+        "After successful admin login and verification, navigating to \"/admin\" renders the dashboard content without access errors.",
+        "Signing out from the dashboard clears the admin session and returns the user to \"/admin/login\"."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/components/auth/RequireAdmin.tsx",
           "operation": "modify",
-          "description": "Ensure the guard cannot enter an infinite redirect loop by only redirecting when verification has completed and is unauthorized; keep loading states while verification is in-flight and show the existing error UI with Retry when verification errors."
+          "description": "Update admin route guarding so that navigating to \"/admin\" without a valid password-admin session (no stored admin token) redirects to \"/admin/login\" (not just rendering nothing). Keep verified-admin rendering behavior intact and continue handling verification errors gracefully. Verify the selected \"authorization\" component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/auth/AdminRouteErrorState.tsx",
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Ensure the Retry action reliably re-attempts admin verification (including re-initializing access control via the admin token path) by refetching the admin verification query in a targeted way, without requiring page refresh."
+          "description": "Confirm the dashboard sign-out action clears the stored admin session token via the existing admin-token mechanism and navigates back to \"/admin/login\"; ensure this remains functional after any dashboard refactors."
         }
       ]
     }

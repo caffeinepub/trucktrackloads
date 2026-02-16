@@ -125,10 +125,13 @@ export interface backendInterface {
     deleteLoad(loadId: string): Promise<void>;
     getAllApprovedLoads(): Promise<Array<Load>>;
     getAllClients(): Promise<Array<ClientInfo>>;
+    getAllClientsWithIds(): Promise<Array<[Principal, ClientInfo]>>;
     getAllContactMessages(): Promise<Array<[Principal, ContactInfo]>>;
     getAllPendingLoads(): Promise<Array<Load>>;
+    getAllPendingLoadsWithIds(): Promise<Array<[string, Load]>>;
     getAllTransporterStatuses(): Promise<Array<[Principal, TransporterStatus]>>;
     getAllTransporters(): Promise<Array<TransporterDetails>>;
+    getAllTransportersWithIds(): Promise<Array<[Principal, TransporterDetails]>>;
     getAllTransportersWithLocations(): Promise<Array<[Principal, TransporterDetails, LiveLocation | null]>>;
     getAndroidApkLink(): Promise<string | null>;
     getCallerClientInfo(): Promise<ClientInfo | null>;

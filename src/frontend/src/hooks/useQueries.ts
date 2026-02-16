@@ -84,6 +84,7 @@ export function useRegisterClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
       queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ['allClientsWithIds'] });
     },
   });
 }
@@ -100,6 +101,7 @@ export function useVerifyClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentClientInfo'] });
       queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ['allClientsWithIds'] });
     },
   });
 }
@@ -112,6 +114,20 @@ export function useGetAllClients() {
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getAllClients();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+// NEW: Get all clients with their Principal IDs
+export function useGetAllClientsWithIds() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[Principal, ClientInfo]>>({
+    queryKey: ['allClientsWithIds'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllClientsWithIds();
     },
     enabled: !!actor && !actorFetching,
   });
@@ -144,6 +160,7 @@ export function useRegisterTransporter() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transporters'] });
       queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransportersWithIds'] });
     },
   });
 }
@@ -161,6 +178,7 @@ export function useVerifyTransporter() {
       queryClient.invalidateQueries({ queryKey: ['currentTransporterDetails'] });
       queryClient.invalidateQueries({ queryKey: ['transporters'] });
       queryClient.invalidateQueries({ queryKey: ['transportersWithLocations'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransportersWithIds'] });
     },
   });
 }
@@ -173,6 +191,20 @@ export function useGetAllTransporters() {
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getAllTransporters();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+// NEW: Get all transporters with their Principal IDs
+export function useGetAllTransportersWithIds() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[Principal, TransporterDetails]>>({
+    queryKey: ['allTransportersWithIds'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllTransportersWithIds();
     },
     enabled: !!actor && !actorFetching,
   });
@@ -291,6 +323,7 @@ export function useCreateLoad() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
     },
   });
 }
@@ -307,6 +340,7 @@ export function useApproveLoad() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
       queryClient.invalidateQueries({ queryKey: ['transporterLoadBoard'] });
     },
@@ -360,6 +394,7 @@ export function useDeleteLoad() {
       queryClient.invalidateQueries({ queryKey: ['approvedLoads'] });
       queryClient.invalidateQueries({ queryKey: ['clientLoads'] });
       queryClient.invalidateQueries({ queryKey: ['pendingLoads'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingLoadsWithIds'] });
       queryClient.invalidateQueries({ queryKey: ['transporterLoadBoard'] });
     },
   });
@@ -426,6 +461,20 @@ export function useGetAllPendingLoads() {
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getAllPendingLoads();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+// NEW: Get pending loads with their IDs
+export function useGetAllPendingLoadsWithIds() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Array<[string, Load]>>({
+    queryKey: ['pendingLoadsWithIds'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllPendingLoadsWithIds();
     },
     enabled: !!actor && !actorFetching,
   });

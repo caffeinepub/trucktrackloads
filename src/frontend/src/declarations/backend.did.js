@@ -164,18 +164,33 @@ export const idlService = IDL.Service({
   'deleteLoad' : IDL.Func([IDL.Text], [], []),
   'getAllApprovedLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
   'getAllClients' : IDL.Func([], [IDL.Vec(ClientInfo)], ['query']),
+  'getAllClientsWithIds' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, ClientInfo))],
+      ['query'],
+    ),
   'getAllContactMessages' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, ContactInfo))],
       ['query'],
     ),
   'getAllPendingLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+  'getAllPendingLoadsWithIds' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, Load))],
+      ['query'],
+    ),
   'getAllTransporterStatuses' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterStatus))],
       ['query'],
     ),
   'getAllTransporters' : IDL.Func([], [IDL.Vec(TransporterDetails)], ['query']),
+  'getAllTransportersWithIds' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterDetails))],
+      ['query'],
+    ),
   'getAllTransportersWithLocations' : IDL.Func(
       [],
       [
@@ -414,12 +429,22 @@ export const idlFactory = ({ IDL }) => {
     'deleteLoad' : IDL.Func([IDL.Text], [], []),
     'getAllApprovedLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
     'getAllClients' : IDL.Func([], [IDL.Vec(ClientInfo)], ['query']),
+    'getAllClientsWithIds' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, ClientInfo))],
+        ['query'],
+      ),
     'getAllContactMessages' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, ContactInfo))],
         ['query'],
       ),
     'getAllPendingLoads' : IDL.Func([], [IDL.Vec(Load)], ['query']),
+    'getAllPendingLoadsWithIds' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, Load))],
+        ['query'],
+      ),
     'getAllTransporterStatuses' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterStatus))],
@@ -428,6 +453,11 @@ export const idlFactory = ({ IDL }) => {
     'getAllTransporters' : IDL.Func(
         [],
         [IDL.Vec(TransporterDetails)],
+        ['query'],
+      ),
+    'getAllTransportersWithIds' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, TransporterDetails))],
         ['query'],
       ),
     'getAllTransportersWithLocations' : IDL.Func(

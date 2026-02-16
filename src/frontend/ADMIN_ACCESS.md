@@ -1,39 +1,60 @@
-# Admin Access Control
-
-This document describes how admin access works in the TruckTrackAfrica application.
+# Admin Access Documentation
 
 ## Overview
-
-Admin access is granted exclusively through credential-based login. The admin dashboard is protected and only accessible to users who have successfully authenticated using the admin username and password.
+This application uses a password-based admin authentication system. Admin access is completely independent from Internet Identity and requires specific credentials.
 
 ## Admin Login Flow
 
-### 1. Credential-Based Login
+### 1. Login Process
+- Navigate to `/admin/login`
+- Enter admin username and password
+- On successful authentication, the backend returns a session token
+- The token is stored in `sessionStorage` under the key `caffeineAdminToken`
 
-Admins must use the dedicated admin login page at `/admin/login` to access the dashboard:
+### 2. Deterministic Post-Login Sequence
+After successful login, the system performs the following steps in order:
 
-1. Navigate to `/admin/login`
-2. Enter the admin username and password
-3. Upon successful authentication, a session token is stored in `sessionStorage` under the key `caffeineAdminToken`
-4. The application automatically redirects to `/admin` where the dashboard is rendered
+1. **Store Token**: Save the admin token to `sessionStorage` and broadcast a change event
+2. **Invalidate Actor**: Force the actor to be recreated with the new token
+3. **Refetch Actor**: Wait for the actor to be fully initialized with the token
+4. **Initialize Access Control**: The actor automatically calls `_initializeAccessControlWithSecret(token)` when the token is present
+5. **Verify Admin Status**: Call `isCallerAdmin()` to verify admin access
+6. **Navigate**: Only navigate to `/admin` when verification returns `true`
 
-### 2. Session Management
+### 3. Token Management
+- **Storage**: `sessionStorage.getItem('caffeineAdminToken')`
+- **Setting**: `setAdminToken(token)` - stores and broadcasts change event
+- **Clearing**: `clearAdminToken()` - removes and broadcasts change event
+- **Event**: `admin-token-changed` - window event for reactive updates
 
-- The admin session token is stored in `sessionStorage` (key: `caffeineAdminToken`)
-- The token persists for the duration of the browser session
-- Closing the browser tab/window will clear the session
-- The token is automatically included in all backend calls to verify admin privileges
+### 4. Admin Route Protection
+The `/admin` route is protected by `RequireAdmin` component which:
+- Checks for the presence of `caffeineAdminToken` in sessionStorage
+- Redirects to `/admin/login` if no token exists
+- Shows loading state while verifying admin access
+- Shows error state with retry option if verification fails
+- Only renders admin content when `isCallerAdmin()` returns `true`
 
-### 3. Access Verification
+### 5. Error Handling
+- **Login Errors**: Display actionable English error messages on the login page
+- **Verification Errors**: Show retry option without requiring re-login
+- **Network Errors**: Display recoverable error UI with retry functionality
+- **No Redirect Loops**: The system stays on `/admin/login` when verification fails
 
-When accessing admin routes:
+## Anonymous User Support
+The password-admin system works independently of Internet Identity:
+- Users do NOT need to log in with Internet Identity to access admin features
+- Admin token initialization happens for anonymous callers
+- The backend treats the session as admin after `_initializeAccessControlWithSecret(token)` is called
 
-1. The app checks for the presence of `caffeineAdminToken` in `sessionStorage`
-2. If no token exists, the user is redirected to `/admin/login`
-3. If a token exists, the backend verifies admin privileges via `isCallerAdmin()`
-4. Only users with valid admin credentials can access the dashboard
+## Backend Integration
+The backend provides:
+- `adminLogin(username, password)`: Returns session token on success, traps on failure
+- `isCallerAdmin()`: Returns `true` if the caller has admin access
+- `_initializeAccessControlWithSecret(token)`: Initializes access control with the admin token
 
-## Admin Credentials
-
-Admin credentials are configured in the backend (`backend/main.mo`):
-
+## Security Notes
+- Admin credentials are hardcoded in the backend: username "Gushna", password "Gushgesh#9"
+- The session token is stored in `sessionStorage` (cleared on tab close)
+- Admin access is session-based and does not persist across browser restarts
+- Internet Identity login does NOT grant admin access

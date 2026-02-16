@@ -10,12 +10,12 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Package, Users, Mail, CheckCircle, XCircle, FileText, Download, Settings, RotateCcw, Weight, Smartphone, ExternalLink, Truck, LogOut } from 'lucide-react';
 import {
-  useGetAllPendingLoads,
+  useGetAllPendingLoadsWithIds,
   useGetAllApprovedLoads,
   useApproveLoad,
-  useGetAllTransporters,
+  useGetAllTransportersWithIds,
   useGetAllContactMessages,
-  useGetAllClients,
+  useGetAllClientsWithIds,
   useGetAndroidApkLink,
   useSetAndroidApkLink,
   useVerifyClient,
@@ -41,11 +41,11 @@ type TransporterVerificationStatus = ClientVerificationStatus;
 const TransporterVerificationStatus = ClientVerificationStatus;
 
 function AdminDashboardContent() {
-  const { data: pendingLoads = [], isLoading: pendingLoadsLoading } = useGetAllPendingLoads();
+  const { data: pendingLoadsWithIds = [], isLoading: pendingLoadsLoading } = useGetAllPendingLoadsWithIds();
   const { data: approvedLoads = [], isLoading: approvedLoadsLoading } = useGetAllApprovedLoads();
-  const { data: transporters = [], isLoading: transportersLoading } = useGetAllTransporters();
+  const { data: transportersWithIds = [], isLoading: transportersLoading } = useGetAllTransportersWithIds();
   const { data: contacts = [], isLoading: contactsLoading } = useGetAllContactMessages();
-  const { data: clients = [], isLoading: clientsLoading } = useGetAllClients();
+  const { data: clientsWithIds = [], isLoading: clientsLoading } = useGetAllClientsWithIds();
   const { data: apkLink, isLoading: apkLinkLoading } = useGetAndroidApkLink();
   const { data: truckTypeOptions = [] } = useGetTruckTypeOptions();
 
@@ -79,9 +79,9 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleVerifyClient = async (clientPrincipal: string, status: ClientVerificationStatus) => {
+  const handleVerifyClient = async (clientPrincipal: Principal, status: ClientVerificationStatus) => {
     try {
-      await verifyClient.mutateAsync({ client: Principal.fromText(clientPrincipal), status });
+      await verifyClient.mutateAsync({ client: clientPrincipal, status });
       toast.success(`Client ${status === ClientVerificationStatus.verified ? 'verified' : status === ClientVerificationStatus.rejected ? 'rejected' : 'updated'} successfully`);
     } catch (error) {
       toast.error('Failed to update client verification status');
@@ -89,9 +89,9 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleVerifyTransporter = async (transporterPrincipal: string, status: TransporterVerificationStatus) => {
+  const handleVerifyTransporter = async (transporterPrincipal: Principal, status: TransporterVerificationStatus) => {
     try {
-      await verifyTransporter.mutateAsync({ transporter: Principal.fromText(transporterPrincipal), status });
+      await verifyTransporter.mutateAsync({ transporter: transporterPrincipal, status });
       toast.success(`Transporter ${status === TransporterVerificationStatus.verified ? 'verified' : status === TransporterVerificationStatus.rejected ? 'rejected' : 'updated'} successfully`);
     } catch (error) {
       toast.error('Failed to update transporter verification status');
@@ -127,7 +127,8 @@ function AdminDashboardContent() {
   };
 
   const handleExportClients = () => {
-    const csvData = clients.map((client) => ({
+    const csvData = clientsWithIds.map(([principal, client]) => ({
+      Principal: principal.toString(),
       Company: client.company,
       'Contact Person': client.contactPerson,
       Email: client.email,
@@ -141,7 +142,8 @@ function AdminDashboardContent() {
   };
 
   const handleExportTransporters = () => {
-    const csvData = transporters.map((transporter) => ({
+    const csvData = transportersWithIds.map(([principal, transporter]) => ({
+      Principal: principal.toString(),
       Company: transporter.company,
       'Contact Person': transporter.contactPerson,
       Email: transporter.email,
@@ -239,14 +241,14 @@ function AdminDashboardContent() {
             <CardContent>
               {pendingLoadsLoading ? (
                 <p className="text-muted-foreground">Loading pending loads...</p>
-              ) : pendingLoads.length === 0 ? (
+              ) : pendingLoadsWithIds.length === 0 ? (
                 <p className="text-muted-foreground">No pending loads</p>
               ) : (
                 <div className="space-y-4">
-                  {pendingLoads.map((load, index) => (
-                    <Card key={index} className="border-2">
+                  {pendingLoadsWithIds.map(([loadId, load]) => (
+                    <Card key={loadId} className="border-2">
                       <CardHeader>
-                        <CardTitle className="text-lg">Load #{index + 1}</CardTitle>
+                        <CardTitle className="text-lg">Load {loadId}</CardTitle>
                         <CardDescription>{load.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -270,7 +272,7 @@ function AdminDashboardContent() {
 
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => handleApprove(`L${index + 1}`, true)}
+                            onClick={() => handleApprove(loadId, true)}
                             disabled={approveLoad.isPending}
                             size="sm"
                             className="flex-1"
@@ -279,7 +281,7 @@ function AdminDashboardContent() {
                             Approve
                           </Button>
                           <Button
-                            onClick={() => handleApprove(`L${index + 1}`, false)}
+                            onClick={() => handleApprove(loadId, false)}
                             disabled={approveLoad.isPending}
                             variant="destructive"
                             size="sm"
@@ -316,7 +318,7 @@ function AdminDashboardContent() {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-lg">Load #{index + 1}</CardTitle>
+                            <CardTitle className="text-lg">Approved Load #{index + 1}</CardTitle>
                             <CardDescription>{load.description}</CardDescription>
                           </div>
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -368,7 +370,7 @@ function AdminDashboardContent() {
             <CardContent>
               {clientsLoading ? (
                 <p className="text-muted-foreground">Loading clients...</p>
-              ) : clients.length === 0 ? (
+              ) : clientsWithIds.length === 0 ? (
                 <p className="text-muted-foreground">No clients registered</p>
               ) : (
                 <div className="overflow-x-auto">
@@ -384,8 +386,8 @@ function AdminDashboardContent() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {clients.map((client, index) => (
-                        <TableRow key={index}>
+                      {clientsWithIds.map(([principal, client]) => (
+                        <TableRow key={principal.toString()}>
                           <TableCell className="font-medium">{client.company}</TableCell>
                           <TableCell>{client.contactPerson}</TableCell>
                           <TableCell>{client.email}</TableCell>
@@ -395,7 +397,7 @@ function AdminDashboardContent() {
                             <div className="flex gap-2">
                               {client.verificationStatus !== ClientVerificationStatus.verified && (
                                 <Button
-                                  onClick={() => handleVerifyClient(client.email, ClientVerificationStatus.verified)}
+                                  onClick={() => handleVerifyClient(principal, ClientVerificationStatus.verified)}
                                   disabled={verifyClient.isPending}
                                   size="sm"
                                   variant="outline"
@@ -406,10 +408,10 @@ function AdminDashboardContent() {
                               )}
                               {client.verificationStatus !== ClientVerificationStatus.rejected && (
                                 <Button
-                                  onClick={() => handleVerifyClient(client.email, ClientVerificationStatus.rejected)}
+                                  onClick={() => handleVerifyClient(principal, ClientVerificationStatus.rejected)}
                                   disabled={verifyClient.isPending}
                                   size="sm"
-                                  variant="outline"
+                                  variant="destructive"
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
                                   Reject
@@ -444,7 +446,7 @@ function AdminDashboardContent() {
             <CardContent>
               {transportersLoading ? (
                 <p className="text-muted-foreground">Loading transporters...</p>
-              ) : transporters.length === 0 ? (
+              ) : transportersWithIds.length === 0 ? (
                 <p className="text-muted-foreground">No transporters registered</p>
               ) : (
                 <div className="overflow-x-auto">
@@ -461,8 +463,8 @@ function AdminDashboardContent() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {transporters.map((transporter, index) => (
-                        <TableRow key={index}>
+                      {transportersWithIds.map(([principal, transporter]) => (
+                        <TableRow key={principal.toString()}>
                           <TableCell className="font-medium">{transporter.company}</TableCell>
                           <TableCell>{transporter.contactPerson}</TableCell>
                           <TableCell>{transporter.email}</TableCell>
@@ -473,7 +475,7 @@ function AdminDashboardContent() {
                             <div className="flex gap-2">
                               {transporter.verificationStatus !== TransporterVerificationStatus.verified && (
                                 <Button
-                                  onClick={() => handleVerifyTransporter(transporter.email, TransporterVerificationStatus.verified)}
+                                  onClick={() => handleVerifyTransporter(principal, TransporterVerificationStatus.verified)}
                                   disabled={verifyTransporter.isPending}
                                   size="sm"
                                   variant="outline"
@@ -484,10 +486,10 @@ function AdminDashboardContent() {
                               )}
                               {transporter.verificationStatus !== TransporterVerificationStatus.rejected && (
                                 <Button
-                                  onClick={() => handleVerifyTransporter(transporter.email, TransporterVerificationStatus.rejected)}
+                                  onClick={() => handleVerifyTransporter(principal, TransporterVerificationStatus.rejected)}
                                   disabled={verifyTransporter.isPending}
                                   size="sm"
-                                  variant="outline"
+                                  variant="destructive"
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
                                   Reject
@@ -530,9 +532,6 @@ function AdminDashboardContent() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm whitespace-pre-wrap">{contact.message}</p>
-                        <p className="text-xs text-muted-foreground mt-4">
-                          Principal: {principal.toString()}
-                        </p>
                       </CardContent>
                     </Card>
                   ))}
@@ -546,7 +545,7 @@ function AdminDashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle>Android APK Download Link</CardTitle>
-              <CardDescription>Set the download link for the Android app APK file</CardDescription>
+              <CardDescription>Manage the download link for the Android application</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {apkLinkLoading ? (
@@ -554,34 +553,44 @@ function AdminDashboardContent() {
               ) : (
                 <>
                   {apkLink && (
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-4 bg-muted rounded-md">
                       <Label className="text-sm font-medium mb-2 block">Current APK Link:</Label>
-                      <a
-                        href={apkLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-2 break-all"
-                      >
-                        {apkLink}
-                        <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-sm bg-background p-2 rounded border overflow-x-auto">
+                          {apkLink}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(apkLink, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   )}
 
                   <div className="space-y-2">
                     <Label htmlFor="apk-link-input">New APK Download Link</Label>
-                    <Input
-                      id="apk-link-input"
-                      type="url"
-                      placeholder="https://example.com/app.apk"
-                      value={apkLinkInput}
-                      onChange={(e) => setApkLinkInput(e.target.value)}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="apk-link-input"
+                        type="url"
+                        placeholder="https://example.com/app.apk"
+                        value={apkLinkInput}
+                        onChange={(e) => setApkLinkInput(e.target.value)}
+                      />
+                      <Button
+                        onClick={handleSaveApkLink}
+                        disabled={setApkLink.isPending || !apkLinkInput.trim()}
+                      >
+                        {setApkLink.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Enter the full URL to the APK file. This link will be displayed to users for downloading the Android app.
+                    </p>
                   </div>
-
-                  <Button onClick={handleSaveApkLink} disabled={setApkLink.isPending}>
-                    {setApkLink.isPending ? 'Saving...' : 'Save APK Link'}
-                  </Button>
                 </>
               )}
             </CardContent>
@@ -591,7 +600,7 @@ function AdminDashboardContent() {
         <TabsContent value="ad-settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Ad Settings</CardTitle>
+              <CardTitle>Advertisement Settings</CardTitle>
               <CardDescription>Configure bottom ad display and content</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -599,7 +608,7 @@ function AdminDashboardContent() {
                 <div className="space-y-0.5">
                   <Label htmlFor="ad-enabled">Enable Bottom Ad</Label>
                   <p className="text-sm text-muted-foreground">
-                    Show or hide the bottom ad across the application
+                    Show advertisement banner at the bottom of pages
                   </p>
                 </div>
                 <Switch
@@ -613,9 +622,9 @@ function AdminDashboardContent() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="ad-snippet">Ad HTML Snippet</Label>
                   <Button
-                    onClick={handleResetAdSnippet}
                     variant="ghost"
                     size="sm"
+                    onClick={handleResetAdSnippet}
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset to Default
@@ -625,9 +634,8 @@ function AdminDashboardContent() {
                   id="ad-snippet"
                   value={adSnippet}
                   onChange={(e) => setAdSnippet(e.target.value)}
-                  rows={8}
-                  className="font-mono text-sm"
                   placeholder="Enter your ad HTML snippet here..."
+                  className="font-mono text-sm min-h-[200px]"
                 />
                 <p className="text-xs text-muted-foreground">
                   Paste your ad network's HTML snippet here (e.g., Google AdSense, AdMob)
@@ -636,10 +644,12 @@ function AdminDashboardContent() {
 
               <div className="space-y-2">
                 <Label>Preview</Label>
-                <AdSnippetPreviewFrame snippet={adSnippet} />
+                <div className="border rounded-md p-4 bg-muted/30">
+                  <AdSnippetPreviewFrame snippet={adSnippet} />
+                </div>
               </div>
 
-              <Button onClick={handleSaveAdSettings}>
+              <Button onClick={handleSaveAdSettings} className="w-full">
                 <Settings className="h-4 w-4 mr-2" />
                 Save Ad Settings
               </Button>
