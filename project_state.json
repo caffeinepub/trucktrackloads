@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Project now focuses on enabling control/configuration of app functions via an in-app settings/control interface due to missing/nonfunctional admin panel.",
+  "architectural_notes": [
+    "Provide an in-app settings/control surface for configuration since an admin panel is currently unavailable."
+  ],
+  "known_issues": [
+    "Admin panel (/admin) is missing/nonexistent; user reports it was expected to be built but is not accessible."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-add-an-in-app-control-center-settings-admin-screen-that-exposes-all-existing-admin-controlled-functions-in-one-place-without-requiring-the-user-to-manually-navigate-to-admin",
+      "title": "Add an in-app “Control Center” (settings/admin) screen that exposes all existing admin-controlled functions in one place, without requiring the user to manually navigate to /admin.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-control-center-include-controls-sections-for-all-currently-implemented-admin-operations-already-present-in-the-codebase-clients-management-transporters-management-pending-approved-loads-review-transporter-assignment-workflow-contracts-management-prices-management-contact-messages-review-deletion-and-years-management-reuse-existing-admin-components-pages-where-possible",
+      "title": "In the Control Center, include controls/sections for all currently implemented admin operations already present in the codebase: clients management, transporters management, pending/approved loads review, transporter assignment workflow, contracts management, prices management, contact messages review/deletion, and years management (reuse existing admin components/pages where possible).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-routing-to-the-control-center-works-reliably-with-the-existing-tanstack-router-configuration-and-does-not-depend-on-admin-being-reachable",
+      "title": "Ensure routing to the Control Center works reliably with the existing TanStack Router configuration, and does not depend on /admin being reachable.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-app-configuration-section-inside-the-control-center-to-manage-app-level-settings-that-already-exist-in-the-backend-or-frontend-config-starting-with-the-android-apk-download-link-backend-and-the-bottom-ad-settings-currently-localstorage-based",
+      "title": "Add an “App Configuration” section inside the Control Center to manage app-level settings that already exist in the backend or frontend config, starting with the Android APK download link (backend) and the bottom ad settings (currently localStorage-based).",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Add in-app settings/control interface to manage app functions that would normally be controlled via an admin panel (no separate /admin required).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Audit all backend actor methods required by the Control Center UI (as used by existing React Query hooks/components) and implement any missing canister functions in backend/main.mo so every control action works end-to-end.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "TruckTrack Loads",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

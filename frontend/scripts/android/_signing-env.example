@@ -1,0 +1,25 @@
+# Android Signing Environment Variables
+# 
+# Copy this file to .signing-env and fill in your actual values:
+#   cp _signing-env.example .signing-env
+#
+# Then load it before building:
+#   source scripts/android/.signing-env
+#
+# NEVER commit .signing-env to version control!
+
+# Path to your release keystore file
+# Example: /Users/yourname/keystores/my-release-key.keystore
+export ANDROID_KEYSTORE_PATH="/path/to/your/keystore.keystore"
+
+# Password for the keystore file
+export ANDROID_KEYSTORE_PASSWORD="your-keystore-password"
+
+# Alias of the key within the keystore
+export ANDROID_KEY_ALIAS="your-key-alias"
+
+# Password for the key (may be same as keystore password)
+export ANDROID_KEY_PASSWORD="your-key-password"
+
+# How to generate a keystore:
+# keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000

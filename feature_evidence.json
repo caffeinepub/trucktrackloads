@@ -1,0 +1,96 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-add-an-in-app-control-center-settings-admin-screen-that-exposes-all-existing-admin-controlled-functions-in-one-place-without-requiring-the-user-to-manually-navigate-to-admin",
+      "featureTitle": "Add an in-app “Control Center” (settings/admin) screen that exposes all existing admin-controlled functions in one place, without requiring the user to manually navigate to /admin.",
+      "files": [
+        "frontend/src/components/auth/RequireAdmin.tsx",
+        "frontend/src/components/layout/TopNav.tsx",
+        "frontend/src/pages/ControlCenterPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-control-center-include-controls-sections-for-all-currently-implemented-admin-operations-already-present-in-the-codebase-clients-management-transporters-management-pending-approved-loads-review-transporter-assignment-workflow-contracts-management-prices-management-contact-messages-review-deletion-and-years-management-reuse-existing-admin-components-pages-where-possible",
+      "featureTitle": "In the Control Center, include controls/sections for all currently implemented admin operations already present in the codebase: clients management, transporters management, pending/approved loads review, transporter assignment workflow, contracts management, prices management, contact messages review/deletion, and years management (reuse existing admin components/pages where possible).",
+      "files": [
+        "frontend/src/components/admin/AdminOperationsTabs.tsx",
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/pages/ControlCenterPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-routing-to-the-control-center-works-reliably-with-the-existing-tanstack-router-configuration-and-does-not-depend-on-admin-being-reachable",
+      "featureTitle": "Ensure routing to the Control Center works reliably with the existing TanStack Router configuration, and does not depend on /admin being reachable.",
+      "files": [
+        "frontend/src/components/auth/RequireAdmin.tsx",
+        "frontend/src/components/layout/TopNav.tsx",
+        "frontend/src/routeTree.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-app-configuration-section-inside-the-control-center-to-manage-app-level-settings-that-already-exist-in-the-backend-or-frontend-config-starting-with-the-android-apk-download-link-backend-and-the-bottom-ad-settings-currently-localstorage-based",
+      "featureTitle": "Add an “App Configuration” section inside the Control Center to manage app-level settings that already exist in the backend or frontend config, starting with the Android APK download link (backend) and the bottom ad settings (currently localStorage-based).",
+      "files": [
+        "frontend/src/components/control-center/AppConfigurationSection.tsx",
+        "frontend/src/pages/ControlCenterPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

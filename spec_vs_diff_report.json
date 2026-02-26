@@ -1,0 +1,77 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-17T09:38:24.569Z",
+  "summary": "Control Center page, route, and TopNav entry were added along with an admin guard and an App Configuration section. Admin operations appear consolidated into a new tabbed component. However, at least two acceptance criteria are not met based on the diff: transporter unassignment from the assignment workflow is explicitly unsupported, and bottom-ad settings are still localStorage-based rather than a single persisted source of truth.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "From the Control Center, an admin can assign/unassign transporters to loads using the existing assign transporter workflow UI.",
+      "reason": "The implemented assignment control explicitly states that unassignment is not supported and disables the \"Unassigned\" option, which conflicts with the unassign requirement.",
+      "evidence": [
+        "frontend/src/components/admin/AdminAssignTransporterControl.tsx"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Bottom ad settings can be controlled from the Control Center via a single source of truth (persisted and reloadable), rather than being device-only localStorage.",
+      "reason": "The Control Center App Configuration section reads/saves bottom ad settings via getAdSettings/saveAdSettings from a local config module, and even dispatches a client-side window event, indicating it remains local/browser storage rather than a centralized persisted source of truth.",
+      "evidence": [
+        "frontend/src/components/control-center/AppConfigurationSection.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Location evidence viewer for transporters (new UI + query calling actor.getLocationEvidence).",
+      "reason": "Not mentioned in the BuildRequest requirements for the Control Center or app configuration.",
+      "evidence": [
+        "frontend/src/components/admin/LocationEvidenceViewer.tsx"
+      ]
+    },
+    {
+      "description": "Transporter operational status card UI and related query/mutation usage.",
+      "reason": "Not requested as part of adding a Control Center or app configuration; appears as additional feature work.",
+      "evidence": [
+        "frontend/src/components/transporter/TransporterStatusCard.tsx"
+      ]
+    },
+    {
+      "description": "Load Board access restriction changes (e.g., browse loads restricted to verified transporters) and related UX updates.",
+      "reason": "Not requested in the Control Center/admin consolidation scope.",
+      "evidence": [
+        "frontend/src/pages/LoadBoardPage.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Content edits to About/Services regional coverage list (adding Democratic Republic of Congo) and Contact page contact details updates.",
+      "reason": "Content/marketing updates are unrelated to the Control Center/admin consolidation requirements.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    }
+  ],
+  "confidence": 0.73,
+  "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/admin/AdminAssignTransporterControl.tsx",
+    "frontend/src/components/admin/AdminContractsSection.tsx",
+    "frontend/src/components/admin/AdminOperationsTabs.tsx",
+    "frontend/src/components/admin/LocationEvidenceViewer.tsx",
+    "frontend/src/components/auth/AdminRouteErrorState.tsx",
+    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/components/control-center/AppConfigurationSection.tsx",
+    "frontend/src/components/layout/TopNav.tsx",
+    "frontend/src/components/transporter/TransporterStatusCard.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/AdminDashboardPage.tsx",
+    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/pages/ControlCenterPage.tsx",
+    "frontend/src/pages/LoadBoardPage.tsx",
+    "frontend/src/routeTree.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "project_state.json"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-17T09:38:24.573Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 5,
+    "implemented": 4,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Add an in-app “Control Center” (settings/admin) screen that exposes all existing admin-controlled functions in one place, without requiring the user to manually navigate to /admin.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ControlCenterPage.tsx",
+          "frontend/src/components/layout/TopNav.tsx",
+          "frontend/src/components/auth/RequireAdmin.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/ControlCenterPage.tsx",
+          "frontend/src/components/layout/TopNav.tsx",
+          "frontend/src/components/auth/RequireAdmin.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "In the Control Center, include controls/sections for all currently implemented admin operations already present in the codebase: clients management, transporters management, pending/approved loads review, transporter assignment workflow, contracts management, prices management, contact messages review/deletion, and years management (reuse existing admin components/pages where possible).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AdminOperationsTabs.tsx",
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/pages/ControlCenterPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AdminOperationsTabs.tsx",
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/pages/ControlCenterPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Ensure routing to the Control Center works reliably with the existing TanStack Router configuration, and does not depend on /admin being reachable.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/routeTree.tsx",
+          "frontend/src/components/auth/RequireAdmin.tsx",
+          "frontend/src/components/layout/TopNav.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/routeTree.tsx",
+          "frontend/src/components/auth/RequireAdmin.tsx",
+          "frontend/src/components/layout/TopNav.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Audit all backend actor methods required by the Control Center UI (as used by existing React Query hooks/components) and implement any missing canister functions in backend/main.mo so every control action works end-to-end.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add an “App Configuration” section inside the Control Center to manage app-level settings that already exist in the backend or frontend config, starting with the Android APK download link (backend) and the bottom ad settings (currently localStorage-based).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useAppConfiguration.ts",
+          "frontend/src/components/control-center/AppConfigurationSection.tsx",
+          "frontend/src/pages/ControlCenterPage.tsx",
+          "frontend/src/components/ads/BottomAd.tsx",
+          "frontend/src/config/ads.ts",
+          "frontend/src/backend.d.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/control-center/AppConfigurationSection.tsx",
+          "frontend/src/pages/ControlCenterPage.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/admin/AdminAssignTransporterControl.tsx",
+    "frontend/src/components/admin/AdminContractsSection.tsx",
+    "frontend/src/components/admin/AdminOperationsTabs.tsx",
+    "frontend/src/components/admin/LocationEvidenceViewer.tsx",
+    "frontend/src/components/auth/AdminRouteErrorState.tsx",
+    "frontend/src/components/auth/RequireAdmin.tsx",
+    "frontend/src/components/control-center/AppConfigurationSection.tsx",
+    "frontend/src/components/layout/TopNav.tsx",
+    "frontend/src/components/transporter/TransporterStatusCard.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/AdminDashboardPage.tsx",
+    "frontend/src/pages/AdminPasswordLoginPage.tsx",
+    "frontend/src/pages/ControlCenterPage.tsx",
+    "frontend/src/pages/LoadBoardPage.tsx",
+    "frontend/src/routeTree.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

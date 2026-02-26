@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 0.5rem;
+        
+        /* Warm earth tones with deep green primary - professional, grounded, trustworthy */
+        --background: 0.98 0.008 80;
+        --foreground: 0.22 0.015 120;
+        
+        --card: 1 0 0;
+        --card-foreground: 0.22 0.015 120;
+        
+        --popover: 1 0 0;
+        --popover-foreground: 0.22 0.015 120;
+        
+        /* Primary: Deep forest green - stability, growth, reliability */
+        --primary: 0.38 0.08 155;
+        --primary-foreground: 0.98 0.008 80;
+        
+        /* Secondary: Warm stone gray - neutral, balanced, earthy */
+        --secondary: 0.90 0.012 80;
+        --secondary-foreground: 0.22 0.015 120;
+        
+        --muted: 0.95 0.010 80;
+        --muted-foreground: 0.52 0.015 120;
+        
+        /* Accent: Warm amber - energy, optimism, action */
+        --accent: 0.68 0.12 60;
+        --accent-foreground: 0.22 0.015 120;
+        
+        --destructive: 0.52 0.20 25;
+        --destructive-foreground: 0.98 0.008 80;
+        
+        --border: 0.92 0.010 80;
+        --input: 0.92 0.010 80;
+        --ring: 0.38 0.08 155;
+        
+        --chart-1: 0.38 0.08 155;
+        --chart-2: 0.68 0.12 60;
+        --chart-3: 0.48 0.10 180;
+        --chart-4: 0.58 0.08 40;
+        --chart-5: 0.55 0.10 280;
+    }
+
+    .dark {
+        --background: 0.20 0.015 120;
+        --foreground: 0.96 0.008 80;
+        
+        --card: 0.24 0.015 120;
+        --card-foreground: 0.96 0.008 80;
+        
+        --popover: 0.22 0.015 120;
+        --popover-foreground: 0.96 0.008 80;
+        
+        --primary: 0.52 0.10 155;
+        --primary-foreground: 0.98 0.008 80;
+        
+        --secondary: 0.32 0.015 120;
+        --secondary-foreground: 0.96 0.008 80;
+        
+        --muted: 0.30 0.015 120;
+        --muted-foreground: 0.72 0.012 80;
+        
+        --accent: 0.65 0.12 60;
+        --accent-foreground: 0.98 0.008 80;
+        
+        --destructive: 0.48 0.20 25;
+        --destructive-foreground: 0.98 0.008 80;
+        
+        --border: 0.30 0.015 120;
+        --input: 0.30 0.015 120;
+        --ring: 0.52 0.10 155;
+        
+        --chart-1: 0.52 0.10 155;
+        --chart-2: 0.68 0.12 60;
+        --chart-3: 0.52 0.10 180;
+        --chart-4: 0.62 0.08 40;
+        --chart-5: 0.60 0.10 280;
+    }
+
+    * {
+        @apply border-border;
+    }
+    
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: "rlig" 1, "calt" 1;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-semibold tracking-tight;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}

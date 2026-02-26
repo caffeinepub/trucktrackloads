@@ -1,0 +1,128 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "In-app Control Center for admin-controlled functions",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Add an in-app Control Center screen and navigation entry, protected for admins and responsive on mobile.",
+      "acceptanceCriteria": [
+        "There is a visible navigation entry (e.g., in the TopNav menu) labeled “Control Center” or “Settings” that takes the user to the control screen.",
+        "The Control Center screen is protected so that non-admin users see an Access Denied screen (or are redirected) instead of the controls.",
+        "The Control Center screen is usable on mobile (responsive layout, no horizontal overflow for key controls)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ControlCenterPage.tsx",
+          "operation": "create",
+          "description": "Create the in-app Control Center page and wrap all content with the existing admin guard (RequireAdmin), composing existing admin UI sections; ensure responsive layout (container, stacking, overflow handling) for mobile."
+        },
+        {
+          "path": "frontend/src/components/layout/TopNav.tsx",
+          "operation": "modify",
+          "description": "Add a visible navigation entry labeled “Control Center” (or “Settings”) in both desktop and mobile menus linking to the Control Center route; keep existing Admin login link intact."
+        },
+        {
+          "path": "frontend/src/components/auth/RequireAdmin.tsx",
+          "operation": "modify",
+          "description": "Update admin protection behavior so non-admin users see an explicit AccessDeniedScreen (instead of rendering null), while preserving the existing redirect behavior for invalid password-admin sessions. Use the authorization component’s access control UI guidance (admin-only AccessDeniedScreen pattern). Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Compose all existing admin operations into the Control Center using existing admin components/pages where possible.",
+      "acceptanceCriteria": [
+        "From the Control Center, an admin can view clients and open the existing client details dialog/actions.",
+        "From the Control Center, an admin can view transporters and open the existing transporter details dialog/actions.",
+        "From the Control Center, an admin can review pending loads, approve/reject/update them via the existing load dialog/actions, and view approved loads.",
+        "From the Control Center, an admin can assign/unassign transporters to loads using the existing assign transporter workflow UI.",
+        "From the Control Center, an admin can access Contracts, Prices, Contact Messages, and Years sections using the existing UI components."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/AdminOperationsTabs.tsx",
+          "operation": "create",
+          "description": "Extract the existing Admin Dashboard’s operations UI (tabs/sections/dialog wiring for clients, transporters, pending/approved loads review, assignment workflow, contracts, prices, contact messages, years) into a reusable component to be embedded in the Control Center and Admin Dashboard."
+        },
+        {
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Refactor AdminDashboardPage to render the new reusable AdminOperationsTabs component (preserving current behavior) so Control Center can reuse the same admin UI without duplication."
+        },
+        {
+          "path": "frontend/src/pages/ControlCenterPage.tsx",
+          "operation": "modify",
+          "description": "Render the reusable AdminOperationsTabs component within the Control Center page so all existing admin operations are accessible without visiting /admin."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add reliable routing for the Control Center with TanStack Router and ensure direct navigation and unauthorized states work correctly.",
+      "acceptanceCriteria": [
+        "Visiting the Control Center route directly (via URL) loads the Control Center screen (not the normal user homepage).",
+        "The Control Center route is reachable from within the app via the navigation link.",
+        "If the user is not an admin, the route shows an explicit access denied state rather than a blank/incorrect page."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/routeTree.tsx",
+          "operation": "modify",
+          "description": "Register a new TanStack Router route for the Control Center page (e.g., /control-center) and ensure it renders the ControlCenterPage component independently of /admin route reachability."
+        },
+        {
+          "path": "frontend/src/components/auth/RequireAdmin.tsx",
+          "operation": "modify",
+          "description": "Ensure RequireAdmin produces a deterministic unauthorized UI state (AccessDeniedScreen) for non-admin users so the Control Center route is never blank/incorrect."
+        },
+        {
+          "path": "frontend/src/components/layout/TopNav.tsx",
+          "operation": "modify",
+          "description": "Wire the new Control Center route into the app navigation so it is reachable from within the app."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add an App Configuration section in Control Center for Android APK link (backend setting) and migrate bottom ad settings from localStorage to a persisted, reloadable single source of truth.",
+      "acceptanceCriteria": [
+        "Admins can view and update the Android APK download link using the existing backend setting (getAndroidApkLink/setAndroidApkLink).",
+        "Bottom ad settings can be controlled from the Control Center (enable/disable + snippet content) via a single source of truth (persisted and reloadable), rather than being device-only localStorage.",
+        "The BottomAd component reflects the configured settings after save (after refresh and on next app open)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAppConfiguration.ts",
+          "operation": "create",
+          "description": "Create React Query hooks for reading/updating app configuration values used by the Control Center: Android APK link via existing backend capabilities (getAndroidApkLink/setAndroidApkLink) and persisted bottom ad settings via backend capabilities to be implemented; handle loading/error states and query invalidation."
+        },
+        {
+          "path": "frontend/src/components/control-center/AppConfigurationSection.tsx",
+          "operation": "create",
+          "description": "Create an App Configuration section UI for Control Center: show/edit Android APK link and bottom ad settings (enabled toggle + snippet editor + preview using AdSnippetPreviewFrame); integrate with the new configuration hooks and provide save feedback. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/ControlCenterPage.tsx",
+          "operation": "modify",
+          "description": "Add the AppConfigurationSection to the Control Center alongside the existing admin operations, keeping the layout responsive and mobile-friendly."
+        },
+        {
+          "path": "frontend/src/components/ads/BottomAd.tsx",
+          "operation": "modify",
+          "description": "Switch BottomAd to read settings from the new persisted configuration source (via React Query hook) rather than localStorage-only, so settings survive refresh/next app open; keep session dismissal behavior unchanged."
+        },
+        {
+          "path": "frontend/src/config/ads.ts",
+          "operation": "modify",
+          "description": "Refactor ad settings helpers so localStorage is no longer the single source of truth; keep any temporary fallback/migration logic minimal and ensure the canonical read/write path is the persisted configuration used by Control Center."
+        },
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Extend the frontend backend interface typings to include the app-configuration capabilities used by the new hooks for persisted bottom ad settings (to match backend changes required by REQ-5), while retaining the existing getAndroidApkLink/setAndroidApkLink signatures."
+        }
+      ]
+    }
+  ]
+}

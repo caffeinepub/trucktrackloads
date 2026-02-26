@@ -1,0 +1,114 @@
+{
+  "kind": "build_request",
+  "title": "Add in-app Control Center to manage all admin-controlled functions",
+  "projectName": "TruckTrack Loads",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Add an in-app “Control Center” (settings/admin) screen that exposes all existing admin-controlled functions in one place, without requiring the user to manually navigate to /admin.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "add all the functions in the app that needs to be controlled"
+        ]
+      },
+      "acceptanceCriteria": [
+        "There is a visible navigation entry (e.g., in the TopNav menu) labeled “Control Center” or “Settings” that takes the user to the control screen.",
+        "The Control Center screen is protected so that non-admin users see an Access Denied screen (or are redirected) instead of the controls.",
+        "The Control Center screen is usable on mobile (responsive layout, no horizontal overflow for key controls)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "In the Control Center, include controls/sections for all currently implemented admin operations already present in the codebase: clients management, transporters management, pending/approved loads review, transporter assignment workflow, contracts management, prices management, contact messages review/deletion, and years management (reuse existing admin components/pages where possible).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "add all the functions in the app that needs to be controlled"
+        ]
+      },
+      "acceptanceCriteria": [
+        "From the Control Center, an admin can view clients and open the existing client details dialog/actions.",
+        "From the Control Center, an admin can view transporters and open the existing transporter details dialog/actions.",
+        "From the Control Center, an admin can review pending loads, approve/reject/update them via the existing load dialog/actions, and view approved loads.",
+        "From the Control Center, an admin can assign/unassign transporters to loads using the existing assign transporter workflow UI.",
+        "From the Control Center, an admin can access Contracts, Prices, Contact Messages, and Years sections using the existing UI components."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Ensure routing to the Control Center works reliably with the existing TanStack Router configuration, and does not depend on /admin being reachable.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "tell me since I don't have admin where will I access my app settings."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Visiting the Control Center route directly (via URL) loads the Control Center screen (not the normal user homepage).",
+        "The Control Center route is reachable from within the app via the navigation link.",
+        "If the user is not an admin, the route shows an explicit access denied state rather than a blank/incorrect page."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Audit all backend actor methods required by the Control Center UI (as used by existing React Query hooks/components) and implement any missing canister functions in backend/main.mo so every control action works end-to-end.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "add all the functions in the app that needs to be controlled"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All Control Center sections load data successfully (no “not implemented”, trap, or missing-method runtime errors for admin users).",
+        "All Control Center mutations (verify/update/delete/approve/assign/add/remove) complete successfully for admin users and return expected results.",
+        "Permission checks remain enforced: admin-only methods trap/deny for non-admin callers."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add an “App Configuration” section inside the Control Center to manage app-level settings that already exist in the backend or frontend config, starting with the Android APK download link (backend) and the bottom ad settings (currently localStorage-based).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "tell me how you can help me that I receive settings in the app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admins can view and update the Android APK download link using the existing backend setting (getAndroidApkLink/setAndroidApkLink).",
+        "Bottom ad settings can be controlled from the Control Center (enable/disable + snippet content) via a single source of truth (persisted and reloadable), rather than being device-only localStorage.",
+        "The BottomAd component reflects the configured settings after save (after refresh and on next app open)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not edit files under frontend/src/components/ui (read-only shadcn components); compose them instead.",
+    "Do not edit frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
+    "Backend must remain a single Motoko actor in backend/main.mo; add migration.mo only if state schema changes require it."
+  ],
+  "nonGoals": [
+    "Rebuilding a separate /admin experience is not required as long as all admin-controlled functions are accessible via the in-app Control Center.",
+    "Adding third-party authentication providers (only Internet Identity is supported).",
+    "Adding external databases or non-Motoko backend services."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}
